@@ -1,0 +1,31 @@
+export class EoiDetailDto {
+  id: string;
+  name: string;
+  referenceNo: string | null;
+  status: string | null;
+  projectId: string | null;
+  projectName: string | null;
+  buyerName: string | null;
+  buyerType: string | null;
+  bookingType: string | null;
+  companyName: string | null;
+  companyRegistrationPlace: string | null;
+  companyRegistrationDate: string | null;
+  tradeLicenseNo: string | null;
+  tradeLicenseExpiryDate: string | null;
+  email: string | null;
+  address: string | null;
+  country: string | null;
+  city: string | null;
+  postalCode: string | null;
+  currency: string | null;
+  totalDepositAmount: number | null;
+  unallocatedAmount: number | null;
+  token: string | null;
+  isConverted: boolean;
+  leadId: string | null;
+  accountId: string | null;
+  ownerId: string | null;
+  createdDate: string;
+  lastModifiedDate: string;
+}

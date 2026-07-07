@@ -1,0 +1,48 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String    @id @default(uuid())
+  firstName            String    @map("first_name")
+  lastName             String    @map("last_name")
+  email                String    @unique
+  phone                String    @unique
+  password             String?
+  isAdmin              Boolean?  @default(false) @map("is_admin")
+  status               String?
+  role                 String?
+  isActive             Boolean?  @default(true) @map("is_active")
+  agencyId             String?   @map("agency_id")
+  agencyName           String?   @map("agency_name")
+  commissionVisibility Boolean?  @default(true) @map("commission_visibility")
+  brnId                String?   @map("brn_id")
+  onboardId            String?   @map("onboard_id")
+  refreshToken         String?   @map("refresh_token")
+  createdAt            DateTime? @default(now()) @map("created_at")
+  updatedAt            DateTime? @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model SalesforceToken {
+  id               String   @id @default("salesforce")
+  accessToken      String
+  instanceUrl      String
+  salesforceUserId String?  @map("salesforce_user_id")
+  expiresAt        DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("salesforce_tokens")
+}

@@ -1,0 +1,708 @@
+{
+  "info": {
+    "_postman_id": "96d416df-dcbb-4cf7-97bf-1c869a58fdc7",
+    "name": "BEEAH Broker Backend",
+    "description": "NestJS backend API for the BEEAH Broker Portal (beeah-broker-backend). Covers auth, users, leads, EOI, bookings, commissions, dashboard, payment plans, projects, sales bookings, sales offers, units, documents, and agency onboarding (create-new-account).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "projectId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "unitId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bookingId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "commissionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "buildingId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "documentId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "opportunityId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "recordId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/register",
+            "description": "Registers a new user, issues auth tokens, and warms the Salesforce session.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+971501234567\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    const data = body.data || {};",
+                  "    if (data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "    if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/auth/login",
+            "description": "Authenticates a user by email/password and issues auth tokens.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    const data = body.data || {};",
+                  "    if (data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "    if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/refresh-token",
+            "description": "Issues a new access/refresh token pair from a valid refresh token (sent as the Bearer token).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{refreshToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "    const body = pm.response.json();",
+                  "    const data = body.data || {};",
+                  "    if (data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "    if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/auth/logout",
+            "description": "Logs the current user out by clearing their stored refresh token."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/users/me",
+            "description": "Returns the currently authenticated user's profile."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Leads",
+      "item": [
+        {
+          "name": "Create Lead",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/leads/create-lead/{{projectId}}",
+            "description": "Creates a new Salesforce lead for the given project.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"countryCode\": \"+971\",\n  \"countryOfResident\": \"United Arab Emirates\",\n  \"email\": \"lead@example.com\",\n  \"firstName\": \"Jane\",\n  \"middleName\": \"\",\n  \"lastName\": \"Smith\",\n  \"mobilePhone\": \"501234567\",\n  \"leadSource\": \"Website\",\n  \"recordTypeDeveloperName\": \"Individual\",\n  \"createdByPortalUser\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Leads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/leads/get-all?pageNumber=1&pageSize=10",
+            "description": "Fetches every lead owned by the authenticated Salesforce user, paginated."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "EOI",
+      "item": [
+        {
+          "name": "Create EOI",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/eoi/create-eoi",
+            "description": "Creates a new EOI, including buyer/company/representative info and unit preferences.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingType\": \"Reservation\",\n  \"projectId\": \"{{projectId}}\",\n  \"buyerType\": \"Individual\",\n  \"propertyType\": \"Apartment\",\n  \"createdByPortalUser\": true,\n  \"salutation\": \"Mr\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"countryCode\": \"+971\",\n  \"mobileNo\": 501234567,\n  \"countryOfResidence\": \"United Arab Emirates\",\n  \"address\": \"123 Sheikh Zayed Road\",\n  \"city\": \"Dubai\",\n  \"unitPreferences\": [\n    {\n      \"unitType\": \"1BR\",\n      \"noOfUnits\": 1,\n      \"eoiAmount\": 50000\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All EOIs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/eoi/get-all?pageNumber=1&pageSize=10",
+            "description": "Fetches every EOI owned by the authenticated Salesforce user, paginated."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Get All Bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/bookings?pageNumber=1&pageSize=10",
+            "description": "Fetches every booking record, paginated."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Booking By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/bookings/{{bookingId}}",
+            "description": "Fetches a single booking by id."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings",
+            "description": "Creates a new booking.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Booking 1\",\n  \"unitId\": \"{{unitId}}\",\n  \"projectId\": \"{{projectId}}\",\n  \"status\": \"Pending\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Booking",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/bookings/{{bookingId}}",
+            "description": "Updates an existing booking.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Confirmed\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Booking",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/bookings/{{bookingId}}",
+            "description": "Deletes a booking by id."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Commissions",
+      "item": [
+        {
+          "name": "Get All Commissions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/commissions?pageNumber=1&pageSize=10",
+            "description": "Fetches every commission record, paginated."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Commission By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/commissions/{{commissionId}}",
+            "description": "Fetches a single commission by id."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Commission",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/commissions",
+            "description": "Creates a new commission.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Commission 1\",\n  \"amount\": 1000,\n  \"status\": \"Pending\",\n  \"bookingId\": \"{{bookingId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Commission",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/commissions/{{commissionId}}",
+            "description": "Updates an existing commission.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Paid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Commission",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/commissions/{{commissionId}}",
+            "description": "Deletes a commission by id."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/dashboard/summary?timeLineInDays=30",
+            "description": "Fetches lead/EOI/booking status counts for the authenticated Salesforce user."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payment Plans",
+      "item": [
+        {
+          "name": "Get Payment Plan",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/payment-plans/get-all/{{buildingId}}",
+            "description": "Fetches the payment plan for the given Salesforce building."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Get All Projects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/projects/all-projects?pageNumber=1&pageSize=10",
+            "description": "Fetches every project record available in Salesforce, paginated."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Projects By Name",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/projects/search-by-name?name=Marina&pageNumber=1&pageSize=10",
+            "description": "Searches projects whose name contains the given text, paginated."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project Details By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/projects/project-details/{{projectId}}",
+            "description": "Fetches a single project by its Salesforce project id."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sales Bookings",
+      "item": [
+        {
+          "name": "Get All Sales Bookings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sales-bookings/get-all?pageNumber=1&pageSize=10",
+            "description": "Fetches every sales booking owned by the authenticated Salesforce user, paginated."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sales Offers",
+      "item": [
+        {
+          "name": "Create Sales Offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sales-offers/create-sales-offer",
+            "description": "Creates a new sales offer for the given opportunity.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sales Offer 1\",\n  \"opportunityId\": \"{{opportunityId}}\",\n  \"description\": \"Special offer\",\n  \"customerName\": \"John Doe\",\n  \"customerEmail\": \"john.doe@example.com\",\n  \"sellingPrice\": 1500000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Units",
+      "item": [
+        {
+          "name": "Get Units By Project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/units/get-all/{{projectId}}?pageNumber=1&pageSize=10",
+            "description": "Fetches every unit belonging to the given project, paginated."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "Upload Document",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/documents/upload",
+            "description": "Uploads a base64-encoded document against a Salesforce record. Common endpoint shared by any flow that needs to attach a document.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fileName\": \"Trade_license.pdf\",\n  \"base64\": \"<base64-encoded-file-content>\",\n  \"recordId\": \"{{recordId}}\",\n  \"documentType\": \"Trade License\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Preview Document",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/documents/preview/{{documentId}}",
+            "description": "Fetches a previously uploaded document's base64 content, for previewing."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Create New Account",
+      "item": [
+        {
+          "name": "Create New Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/create-new-account/add",
+            "description": "Submits a new agency onboarding application, including bank and document details. Public endpoint (no auth) as part of the onboarding flow.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"onboarding\": {\n    \"subType\": \"UAE Agency\",\n    \"agencyName\": \"Example Realty\",\n    \"email\": \"agency@example.com\",\n    \"phone\": \"+971501234567\",\n    \"type\": \"Agency\",\n    \"role\": \"Broker\",\n    \"poBox\": \"12345\",\n    \"ownerShipType\": \"LLC\",\n    \"companyReraRegistrationNumber\": \"RERA-12345\",\n    \"companyReraExpiry\": \"2027-01-01\",\n    \"authorizedWith\": \"Signatory\",\n    \"haveTrn\": \"100123456700003\",\n    \"authorizedSignatoryEmail\": \"signatory@example.com\",\n    \"authorizedSignatoryMobile\": \"501234568\",\n    \"authorizedSignatoryCountryCode\": \"+971\",\n    \"addressLine1\": \"123 Sheikh Zayed Road\",\n    \"addressLine2\": \"\",\n    \"city\": \"Dubai\",\n    \"country\": \"United Arab Emirates\",\n    \"tradeLicenseNumber\": \"TL-12345\",\n    \"tradeLicenseExpiry\": \"2027-01-01\"\n  },\n  \"bank\": {\n    \"bankName\": \"Emirates NBD\",\n    \"bankAccountName\": \"Example Realty\",\n    \"bankAccountNumber\": \"1234567890\",\n    \"ibanNumber\": \"AE123456789012345678901\",\n    \"swiftCode\": \"EBILAEAD\",\n    \"currencyValue\": \"AED\"\n  },\n  \"documents\": [\n    {\n      \"documentType\": \"Trade License\",\n      \"fileName\": \"trade_license.pdf\",\n      \"base64Data\": \"<base64-encoded-file-content>\",\n      \"issueDate\": \"2022-01-01\",\n      \"expiryDate\": \"2027-01-01\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Required Documents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/create-new-account/get-required-documents",
+            "description": "Fetches the mandatory document checklist for a given agency sub-type. Public endpoint (no auth) as part of the onboarding flow.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subType\": \"UAE Agency\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Agency Sub Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/create-new-account/sub-types",
+            "description": "Fetches the list of valid agency sub-types, for populating the onboarding form's subType dropdown. Public endpoint (no auth) as part of the onboarding flow.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
