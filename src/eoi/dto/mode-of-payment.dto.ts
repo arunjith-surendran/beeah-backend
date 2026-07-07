@@ -1,8 +1,9 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { PaymentMode } from './payment-mode.enum';
 
 export class ModeOfPaymentDto {
-  @IsString()
-  paymentMode: string;
+  @IsEnum(PaymentMode)
+  paymentMode: PaymentMode;
 
   @IsString()
   currencyType: string;
