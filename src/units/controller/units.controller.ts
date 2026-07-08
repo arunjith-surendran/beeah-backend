@@ -40,6 +40,34 @@ export class UnitsController {
   }
 
   /**
+   * Searches units within a project whose name or code contains the given text
+   * (case-insensitive), paginated on our side.
+   *
+   * @param user - Authenticated user attached by `JwtAuthGuard`.
+   * @param projectId - Salesforce project id, taken from the route path.
+   * @param query - Search term matched against the unit name or code.
+   * @param pageNumber - 1-based page number. Defaults to 1.
+   * @param pageSize - Page size. Defaults to 10.
+   * @returns The requested page of matching units, with pagination metadata alongside `message`.
+   */
+  @Get('search/:projectId')
+  searchUnitsByProject(
+    @CurrentUser() user: User,
+    @Param('projectId') projectId: string,
+    @Query('query') query: string,
+    @Query('pageNumber') pageNumber?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<PaginatedResultWithMessage<UnitDto[]>> {
+    return this.unitsService.searchUnitsByProject(
+      user,
+      projectId,
+      query,
+      pageNumber,
+      pageSize,
+    );
+  }
+
+  /**
    * Fetches the unit preference (unit type) options and token amount for a given project.
    *
    * @param user - Authenticated user attached by `JwtAuthGuard`.

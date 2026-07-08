@@ -57,6 +57,53 @@ export class UnitsService {
   }
 
   /**
+   * Fetches every unit for the given project, filters it down to those whose name or
+   * code contains `query`, and returns the requested page of matches.
+   *
+   * @param user - Authenticated user.
+   * @param projectId - Salesforce project id.
+   * @param query - Search term matched case-insensitively against the unit name or code.
+   * @param pageNumber - 1-based page number. Defaults to 1.
+   * @param pageSize - Page size. Defaults to 10.
+   * @throws {BadRequestException} When `projectId` or `query` is missing or blank.
+   * @returns The requested page of matching units, with pagination metadata alongside `message`.
+   */
+  async searchUnitsByProject(
+    user: User,
+    projectId: string,
+    query: string,
+    pageNumber?: string,
+    pageSize?: string,
+  ): Promise<PaginatedResultWithMessage<UnitDto[]>> {
+    unauthorizedException(!!user, 'Unauthorized');
+    required(projectId, 'projectId');
+    required(query, 'query');
+
+    const response = await this.unitsRepository.getUnitsByProject(projectId);
+    const search = query.trim().toLowerCase();
+
+    const matched = response.units.filter(
+      (unit) =>
+        unit.unitName?.toLowerCase().includes(search) ||
+        unit.unitCode?.toLowerCase().includes(search),
+    );
+    const paged = paginate(matched, pageNumber, pageSize);
+
+    return {
+      message: response.message,
+      pagination: {
+        pageNumber: paged.pageNumber,
+        pageSize: paged.pageSize,
+        total: paged.total,
+        totalPages: paged.totalPages,
+        hasNext: paged.hasNext,
+        hasPrevious: paged.hasPrevious,
+      },
+      data: paged.items.map((unit) => this.toUnitDto(unit)),
+    };
+  }
+
+  /**
    * Maps a raw Salesforce `Unit` record into the API's `UnitDto` shape.
    *
    * @param unit - Raw unit record returned by the Salesforce Apex REST endpoint.
