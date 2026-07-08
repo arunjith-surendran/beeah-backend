@@ -9,7 +9,10 @@ import { AuthRepository } from '../repository/auth.repository';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { JwtPayload } from '../types/jwt-payload.type';
-import { unauthorizedException } from '../../common/utils/validators.util';
+import {
+  required,
+  unauthorizedException,
+} from '../../common/utils/validators.util';
 
 const SALT_ROUNDS = 10;
 
@@ -70,6 +73,19 @@ export class AuthService {
       this.authRepository.warmSalesforceSession(),
     ]);
     return { user: sanitizeUser(user), ...tokens, salesforceAccessToken };
+  }
+
+  /**
+   * Checks whether a user with the given email is already registered.
+   *
+   * @param email - Email address to look up.
+   * @throws {BadRequestException} When `email` is missing or blank.
+   * @returns Whether a matching user exists.
+   */
+  async checkUserExists(email: string): Promise<{ exists: boolean }> {
+    required(email, 'email');
+    const user = await this.usersService.findByEmail(email);
+    return { exists: !!user };
   }
 
   /**

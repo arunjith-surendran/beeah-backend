@@ -1,6 +1,8 @@
 import {
   Controller,
   Post,
+  Get,
+  Query,
   Body,
   HttpCode,
   HttpStatus,
@@ -40,6 +42,17 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  /**
+   * Checks whether a user with the given email is already registered.
+   *
+   * @param email - Email address to look up.
+   * @returns Whether a matching user exists.
+   */
+  @Get('check-user')
+  checkUserExists(@Query('email') email: string) {
+    return this.authService.checkUserExists(email);
   }
 
   /**
