@@ -7,7 +7,6 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { LeadModule } from './lead/lead.module';
 import { EoiModule } from './eoi/eoi.module';
-import { BookingModule } from './booking/booking.module';
 import { ProjectModule } from './project/project.module';
 import { UnitsModule } from './units/units.module';
 import { CommissionModule } from './commission/commission.module';
@@ -26,7 +25,6 @@ import { DocumentModule } from './document/document.module';
     AuthModule,
     LeadModule,
     EoiModule,
-    BookingModule,
     ProjectModule,
     UnitsModule,
     CommissionModule,
