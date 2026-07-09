@@ -18,6 +18,16 @@ import { CreateNewAccountResultDto } from '../dto/create-new-account-result.dto'
 import { GetRequiredDocumentsDto } from '../dto/get-required-documents.dto';
 import { RequiredDocumentDto } from '../dto/required-document.dto';
 import { AgencySubType } from '../dto/agency-sub-type.enum';
+import { AgencyCategory } from '../dto/agency-category.enum';
+import { AgencySubTypeGroupDto } from '../dto/agency-sub-type-group.dto';
+
+const AGENCY_SUB_TYPES_BY_CATEGORY: Record<AgencyCategory, AgencySubType[]> = {
+  [AgencyCategory.Company]: [
+    AgencySubType.UaeAgency,
+    AgencySubType.InternationalAgency,
+  ],
+  [AgencyCategory.Individual]: [AgencySubType.SelfLicensedResidence],
+};
 
 @Injectable()
 export class CreateNewAccountService {
@@ -134,14 +144,19 @@ export class CreateNewAccountService {
   }
 
   /**
-   * Fetches the list of valid agency sub-types, for populating the onboarding form.
+   * Fetches the valid agency sub-types for every category, for populating the onboarding form.
    *
-   * @returns The agency sub-type values wrapped in a `{ message, data }` envelope.
+   * @returns The agency sub-types grouped by category, wrapped in a `{ message, data }` envelope.
    */
-  getAgencySubTypes(): Promise<ResultWithMessage<AgencySubType[]>> {
+  getAgencySubTypes(): Promise<ResultWithMessage<AgencySubTypeGroupDto[]>> {
+    const data = Object.values(AgencyCategory).map((category) => ({
+      category,
+      subTypes: AGENCY_SUB_TYPES_BY_CATEGORY[category],
+    }));
+
     return Promise.resolve({
       message: 'Agency sub types fetched successfully',
-      data: Object.values(AgencySubType),
+      data,
     });
   }
 }

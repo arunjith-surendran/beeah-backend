@@ -5,6 +5,7 @@ import { ResultWithMessage } from '../../common/interfaces/result-with-message.i
 import { CreateNewAccountResultDto } from '../dto/create-new-account-result.dto';
 import { GetRequiredDocumentsDto } from '../dto/get-required-documents.dto';
 import { RequiredDocumentDto } from '../dto/required-document.dto';
+import { AgencySubTypeGroupDto } from '../dto/agency-sub-type-group.dto';
 
 @Controller('create-new-account')
 export class CreateNewAccountController {
@@ -39,12 +40,12 @@ export class CreateNewAccountController {
   }
 
   /**
-   * Fetches the list of valid agency sub-types, for populating the onboarding form.
+   * Fetches the valid agency sub-types for every category, for populating the onboarding form.
    *
-   * @returns The agency sub-type values wrapped in a `{ message, data }` envelope.
+   * @returns The agency sub-types grouped by category, wrapped in a `{ message, data }` envelope.
    */
   @Get('sub-types')
-  getAgencySubTypes(): Promise<ResultWithMessage<string[]>> {
+  getAgencySubTypes(): Promise<ResultWithMessage<AgencySubTypeGroupDto[]>> {
     return this.createNewAccountService.getAgencySubTypes();
   }
 }

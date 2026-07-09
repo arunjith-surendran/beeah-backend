@@ -29,8 +29,7 @@ export class AuthService {
    * Creates a new user, hashing their password before storage.
    *
    * @param dto - New user's registration details.
-   * @returns The sanitized user record, a fresh access/refresh token pair, and the
-   * Salesforce access token (`undefined` if Salesforce authentication failed).
+   * @returns The sanitized user record plus a fresh access/refresh token pair.
    */
   async register(dto: RegisterDto) {
     const hashedPassword = await bcrypt.hash(dto.password, SALT_ROUNDS);
@@ -42,20 +41,22 @@ export class AuthService {
       password: hashedPassword,
     });
 
-    const [tokens, salesforceAccessToken] = await Promise.all([
+    // Salesforce session is warmed (and cached inside SalesforceClient) as a side effect
+    // so the first real Salesforce-backed call after signup doesn't pay for the handshake -
+    // its token is intentionally not returned to the client.
+    const [tokens] = await Promise.all([
       this.issueTokens(user),
       this.authRepository.warmSalesforceSession(),
     ]);
-    return { user: sanitizeUser(user), ...tokens, salesforceAccessToken };
+    return { user: sanitizeUser(user), ...tokens };
   }
 
   /**
-   * Verifies a user's email/password, issues our own auth tokens, and authenticates against Salesforce.
+   * Verifies a user's email/password and issues our own auth tokens.
    *
    * @param dto - Login credentials.
    * @throws {UnauthorizedException} When no user matches the email, or the password is wrong.
-   * @returns The sanitized user record, a fresh access/refresh token pair, and the
-   * Salesforce access token (`undefined` if Salesforce authentication failed).
+   * @returns The sanitized user record plus a fresh access/refresh token pair.
    */
   async login(dto: LoginDto) {
     const user = await this.usersService.findByEmail(dto.email);
@@ -68,11 +69,14 @@ export class AuthService {
     const passwordMatches = await bcrypt.compare(dto.password, user.password);
     unauthorizedException(passwordMatches, 'Invalid credentials');
 
-    const [tokens, salesforceAccessToken] = await Promise.all([
+    // Salesforce session is warmed (and cached inside SalesforceClient) as a side effect
+    // so the first real Salesforce-backed call after login doesn't pay for the handshake -
+    // its token is intentionally not returned to the client.
+    const [tokens] = await Promise.all([
       this.issueTokens(user),
       this.authRepository.warmSalesforceSession(),
     ]);
-    return { user: sanitizeUser(user), ...tokens, salesforceAccessToken };
+    return { user: sanitizeUser(user), ...tokens };
   }
 
   /**
