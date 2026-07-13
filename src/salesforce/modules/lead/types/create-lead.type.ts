@@ -1,5 +1,5 @@
 export interface CreateLeadApexPayload {
-  Project_Id: string;
+  interestedProject?: string;
   countryCode: string;
   countryOfResident: string;
   email: string;
@@ -7,9 +7,16 @@ export interface CreateLeadApexPayload {
   middleName?: string;
   lastName: string;
   mobilePhone: string;
-  leadSource: string;
   recordTypeDeveloperName: string;
   createdByPortalUser: boolean;
+  company?: string;
+  interestedPropertyType?: string;
+  // Unconfirmed against the actual Apex wrapper class - if this doesn't persist,
+  // it's the most likely name to double check.
+  noOfBedroom?: string;
+  preferredLanguage?: string;
+  budgetRange?: string;
+  description?: string;
 }
 
 export interface CreateLeadApexResponse {

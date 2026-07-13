@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
@@ -22,20 +14,19 @@ export class LeadController {
   constructor(private readonly leadService: LeadService) {}
 
   /**
-   * Creates a new Salesforce lead for the given project.
+   * Creates a new Salesforce lead. The interested project is optional, matching the
+   * real Salesforce broker portal's lead-creation form.
    *
    * @param user - Authenticated user attached by `JwtAuthGuard`.
-   * @param projectId - Salesforce project id, taken from the route path.
    * @param dto - Lead details submitted by the client.
    * @returns The created lead id wrapped in a `{ message, data }` envelope.
    */
-  @Post('create-lead/:projectId')
+  @Post('create-lead')
   createLead(
     @CurrentUser() user: User,
-    @Param('projectId') projectId: string,
     @Body() dto: CreateLeadDto,
   ): Promise<ResultWithMessage<CreateLeadResponseDto>> {
-    return this.leadService.createLead(user, projectId, dto);
+    return this.leadService.createLead(user, dto);
   }
 
   /**

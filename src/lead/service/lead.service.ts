@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Injectable } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { LeadRepository } from '../repository/lead.repository';
@@ -8,10 +5,7 @@ import { LeadRecord } from '../../salesforce/modules/lead/types/get-leads.type';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-result-with-message.interface';
 import { paginate } from '../../common/utils/paginate.util';
-import {
-  required,
-  unauthorizedException,
-} from '../../common/utils/validators.util';
+import { unauthorizedException } from '../../common/utils/validators.util';
 import { SalesforceClient } from '../../salesforce/network/salesforce.client';
 import { CreateLeadDto, CreateLeadResponseDto } from '../dto/create-lead.dto';
 import { LeadDetailDto } from '../dto/get-leads.dto';
@@ -24,23 +18,21 @@ export class LeadService {
   ) {}
 
   /**
-   * Builds the Salesforce lead payload from the client DTO and submits it.
+   * Builds the Salesforce lead payload from the client DTO and submits it. The interested
+   * project is optional, matching the real Salesforce broker portal's lead-creation form.
    *
    * @param user - Authenticated user.
-   * @param projectId - Salesforce project id the lead should be linked to.
    * @param dto - Lead details submitted by the client.
    * @returns The created lead id wrapped in a `{ message, data }` envelope.
    */
   async createLead(
     user: User,
-    projectId: string,
     dto: CreateLeadDto,
   ): Promise<ResultWithMessage<CreateLeadResponseDto>> {
     unauthorizedException(!!user, 'Unauthorized');
-    required(projectId, 'projectId');
 
     const response = await this.leadRepository.createLead({
-      Project_Id: projectId,
+      interestedProject: dto.projectId,
       countryCode: dto.countryCode,
       countryOfResident: dto.countryOfResident,
       email: dto.email,
@@ -48,9 +40,14 @@ export class LeadService {
       middleName: dto.middleName,
       lastName: dto.lastName,
       mobilePhone: dto.mobilePhone,
-      leadSource: dto.leadSource,
       recordTypeDeveloperName: dto.recordTypeDeveloperName,
       createdByPortalUser: dto.createdByPortalUser,
+      company: dto.company,
+      interestedPropertyType: dto.interestedPropertyType,
+      noOfBedroom: dto.noOfBedroom,
+      preferredLanguage: dto.preferredLanguage,
+      budgetRange: dto.budgetRange,
+      description: dto.description,
     });
 
     return {
