@@ -1,6 +1,19 @@
-import { IsEmail, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsPhoneNumber,
+  IsString,
+} from 'class-validator';
+import { AgencySubType } from './agency-sub-type.enum';
 
 export class PersonalDetailsDto {
+  @IsString()
+  type: string;
+
+  @IsEnum(AgencySubType)
+  subType: AgencySubType;
+
   @IsString()
   firstName: string;
 

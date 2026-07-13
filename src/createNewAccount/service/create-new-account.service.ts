@@ -82,8 +82,8 @@ export class CreateNewAccountService {
       personalDetails: dto.personalDetails
         ? this.toPersonalDetailsPayload(dto.personalDetails)
         : undefined,
-      bank: this.toBankPayload(dto.bank),
-      licensePartner: dto.licensePartner?.map((partner) =>
+      bank: this.toBankPayload(dto.bankInfo),
+      licensePartner: dto.licensePartners?.map((partner) =>
         this.toLicensePartnerPayload(partner),
       ),
       documents: dto.documents.map((doc) => this.toDocumentPayload(doc)),
@@ -135,6 +135,8 @@ export class CreateNewAccountService {
     personalDetails: PersonalDetailsDto,
   ): PersonalDetailsPayload {
     return {
+      Type: personalDetails.type,
+      SubType: personalDetails.subType,
       FirstName: personalDetails.firstName,
       LastName: personalDetails.lastName,
       Nationality: personalDetails.nationality,
@@ -162,7 +164,7 @@ export class CreateNewAccountService {
     return {
       Name: partner.name,
       Nationality: partner.nationality,
-      EmiratesId: partner.emiratedId,
+      EmiratesId: partner.emiratesId,
       PassportNo: partner.passportNo,
       Role: partner.role,
       SharePercentage: partner.sharePercentage,

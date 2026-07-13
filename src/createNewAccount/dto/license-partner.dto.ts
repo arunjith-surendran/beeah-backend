@@ -7,11 +7,9 @@ export class LicensePartnerDto {
   @IsString()
   nationality: string;
 
-  // NOTE: matches the client payload's field name exactly (client sends
-  // "emiratedId", not "emiratesId").
   @IsOptional()
   @IsString()
-  emiratedId?: string;
+  emiratesId?: string;
 
   @IsString()
   passportNo: string;

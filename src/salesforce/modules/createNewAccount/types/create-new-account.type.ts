@@ -23,6 +23,8 @@ export interface OnboardingDetailsPayload {
 }
 
 export interface PersonalDetailsPayload {
+  Type: string;
+  SubType: string;
   FirstName: string;
   LastName: string;
   Nationality: string;

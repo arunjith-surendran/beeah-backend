@@ -24,13 +24,13 @@ export class CreateNewAccountDto {
 
   @ValidateNested()
   @Type(() => BankDetailsDto)
-  bank: BankDetailsDto;
+  bankInfo: BankDetailsDto;
 
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => LicensePartnerDto)
-  licensePartner?: LicensePartnerDto[];
+  licensePartners?: LicensePartnerDto[];
 
   @IsArray()
   @ValidateNested({ each: true })
