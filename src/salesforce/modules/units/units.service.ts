@@ -4,7 +4,10 @@ import {
   GET_UNIT_PREFERENCE_APEX_REST_PATH,
   GET_UNITS_APEX_REST_PATH,
 } from '../../network/paths/units.paths';
-import { GetUnitsApexResponse } from './types/get-units.type';
+import {
+  GetUnitsApexRawResponse,
+  GetUnitsApexResponse,
+} from './types/get-units.type';
 import {
   GetUnitPreferenceApexPayload,
   GetUnitPreferenceApexResponse,
@@ -15,18 +18,29 @@ export class UnitsService {
   constructor(private readonly salesforceClient: SalesforceClient) {}
 
   /**
-   * Calls the Salesforce `getunits` Apex REST endpoint for a given project.
+   * Calls the Salesforce `getunits` Apex REST endpoint for a given project and flattens
+   * its per-building grouping (`data: [{ units, buildingId }]`) into a single unit list,
+   * merging each group's `buildingId` onto every unit within it.
    *
    * @param projectId - Salesforce project id to fetch units for.
-   * @returns The raw Apex REST response containing the project's unit records.
+   * @returns The project's unit records as a flat list, with buildingId per unit.
    */
   async getUnitsByProject(projectId: string): Promise<GetUnitsApexResponse> {
     const response =
-      await this.salesforceClient.http.post<GetUnitsApexResponse>(
+      await this.salesforceClient.http.post<GetUnitsApexRawResponse>(
         GET_UNITS_APEX_REST_PATH,
         { projectId },
       );
-    return response.data;
+    const raw = response.data;
+
+    return {
+      status: raw.status,
+      noOfUnits: raw.noOfUnits,
+      message: raw.message,
+      units: raw.data.flatMap((group) =>
+        group.units.map((unit) => ({ ...unit, buildingId: group.buildingId })),
+      ),
+    };
   }
 
   /**

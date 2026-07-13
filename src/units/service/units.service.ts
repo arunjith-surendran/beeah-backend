@@ -16,6 +16,7 @@ import {
   unauthorizedException,
 } from '../../common/utils/validators.util';
 import { UnitDto } from '../dto/get-units.dto';
+import { FilterUnitsDto } from '../dto/filter-units.dto';
 import { UnitPreferenceListDto } from '../dto/unit-preference-list.dto';
 
 @Injectable()
@@ -111,6 +112,90 @@ export class UnitsService {
   }
 
   /**
+   * Fetches every unit for the given project and filters it down to those matching the given
+   * price/bedroom/area range criteria, returning the requested page of matches. There's no
+   * Salesforce-side filter endpoint, so this reuses the same full-project fetch as
+   * `getUnitsByProject` and filters in-memory.
+   *
+   * @param user - Authenticated user.
+   * @param projectId - Salesforce project id.
+   * @param filters - Price/bedroom/area range and status filter criteria.
+   * @throws {BadRequestException} When `projectId` is missing or blank.
+   * @returns The requested page of matching units, with pagination metadata alongside `message`.
+   */
+  async filterUnitsByProject(
+    user: User,
+    projectId: string,
+    filters: FilterUnitsDto,
+  ): Promise<PaginatedResultWithMessage<UnitDto[]>> {
+    unauthorizedException(!!user, 'Unauthorized');
+    required(projectId, 'projectId');
+
+    const response = await this.unitsRepository.getUnitsByProject(projectId);
+
+    const minPrice = this.toOptionalNumber(filters.minPrice);
+    const maxPrice = this.toOptionalNumber(filters.maxPrice);
+    const noOfBedrooms = this.toOptionalNumber(filters.noOfBedrooms);
+    const minArea = this.toOptionalNumber(filters.minArea);
+    const maxArea = this.toOptionalNumber(filters.maxArea);
+    const status = filters.status?.trim().toLowerCase();
+
+    const matched = response.units.filter((unit) => {
+      const price = this.toNumberOrNull(unit.unitPrice);
+      const bedrooms = this.toNumberOrNull(unit.noOfBedroom);
+      const area = unit.area;
+
+      if (minPrice !== undefined && (price === null || price < minPrice)) {
+        return false;
+      }
+      if (maxPrice !== undefined && (price === null || price > maxPrice)) {
+        return false;
+      }
+      if (noOfBedrooms !== undefined && bedrooms !== noOfBedrooms) {
+        return false;
+      }
+      if (minArea !== undefined && (area === null || area < minArea)) {
+        return false;
+      }
+      if (maxArea !== undefined && (area === null || area > maxArea)) {
+        return false;
+      }
+      if (status && unit.status?.toLowerCase() !== status) {
+        return false;
+      }
+      return true;
+    });
+
+    const paged = paginate(matched, filters.pageNumber, filters.pageSize);
+    const projectImage = await this.getProjectImage(user, projectId);
+
+    return {
+      message: response.message,
+      pagination: {
+        pageNumber: paged.pageNumber,
+        pageSize: paged.pageSize,
+        total: paged.total,
+        totalPages: paged.totalPages,
+        hasNext: paged.hasNext,
+        hasPrevious: paged.hasPrevious,
+      },
+      data: paged.items.map((unit) => this.toUnitDto(unit, projectImage)),
+    };
+  }
+
+  /**
+   * Coerces an optional numeric-looking query string to a number, or `undefined` when
+   * absent/blank/non-numeric (in which case the corresponding filter is skipped).
+   */
+  private toOptionalNumber(value?: string): number | undefined {
+    if (value === undefined || value === null || value.trim() === '') {
+      return undefined;
+    }
+    const num = Number(value);
+    return Number.isNaN(num) ? undefined : num;
+  }
+
+  /**
    * Fetches the parent project's image, to use as a fallback when a unit has none of its
    * own. Never throws - a project lookup failure just means no fallback image is available.
    *
@@ -159,6 +244,16 @@ export class UnitsService {
   }
 
   /**
+   * Coerces a Salesforce numeric-looking field (observed as either a string or a
+   * number depending on the record) to a number, or `null` when absent.
+   */
+  private toNumberOrNull(
+    value: string | number | null | undefined,
+  ): number | null {
+    return value === null || value === undefined ? null : Number(value);
+  }
+
+  /**
    * Maps a raw Salesforce `Unit` record into the API's `UnitDto` shape.
    *
    * @param unit - Raw unit record returned by the Salesforce Apex REST endpoint.
@@ -174,16 +269,25 @@ export class UnitsService {
       view: unit.unitView,
       price: unit.unitPrice !== null ? Number(unit.unitPrice) : null,
       status: unit.status,
+      publishToBroker: unit.publishToBroker ?? null,
       propertyType: unit.propertyType,
-      noOfBedroom: unit.noOfBedroom,
+      noOfParkings: this.toNumberOrNull(unit.noOfParkings),
+      noOfBedroom: this.toNumberOrNull(unit.noOfBedroom),
+      noOfBathrooms: this.toNumberOrNull(unit.noOfBathrooms),
+      noOfBalcony: this.toNumberOrNull(unit.noOfBalcony),
       isVilla: unit.isVilla,
       guestRoom: unit.guestRoom,
       floor: unit.floor,
       buildingId: unit.buildingId,
-      balconyArea: unit.balconyArea,
+      balconyArea: unit.balconyArea ?? null,
       area: unit.area,
-      approvalStatus: unit.approvalStatus,
+      approvalStatus: unit.approvalStatus ?? null,
       apartmentType: unit.apartmentType,
+      city: unit.city,
+      category: unit.category,
+      balconyAvailability: unit.balconyAvailability,
+      availableDate: unit.availableDate,
+      eoiTokenAmount: this.toNumberOrNull(unit.EOITokenAmount),
       image: this.extractUnitImage(unit.documents) ?? projectImage,
     };
   }

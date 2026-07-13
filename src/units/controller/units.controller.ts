@@ -8,6 +8,7 @@ import { UnitsService } from '../service/units.service';
 import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-result-with-message.interface';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { UnitDto } from '../dto/get-units.dto';
+import { FilterUnitsDto } from '../dto/filter-units.dto';
 import { UnitPreferenceListDto } from '../dto/unit-preference-list.dto';
 
 @UseGuards(JwtAuthGuard)
@@ -65,6 +66,25 @@ export class UnitsController {
       pageNumber,
       pageSize,
     );
+  }
+
+  /**
+   * Filters units within a project by price range, bedroom count, area range, and/or status,
+   * paginated on our side. There's no Salesforce-side filter endpoint, so this fetches every
+   * unit for the project (same as `get-all/:projectId`) and filters in-memory.
+   *
+   * @param user - Authenticated user attached by `JwtAuthGuard`.
+   * @param projectId - Salesforce project id, taken from the route path.
+   * @param filters - Price/bedroom/area range and status filter criteria, plus pagination.
+   * @returns The requested page of matching units, with pagination metadata alongside `message`.
+   */
+  @Get('filter/:projectId')
+  filterUnitsByProject(
+    @CurrentUser() user: User,
+    @Param('projectId') projectId: string,
+    @Query() filters: FilterUnitsDto,
+  ): Promise<PaginatedResultWithMessage<UnitDto[]>> {
+    return this.unitsService.filterUnitsByProject(user, projectId, filters);
   }
 
   /**
