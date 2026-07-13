@@ -10,6 +10,7 @@ import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-re
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { paginate } from '../../common/utils/paginate.util';
 import {
+  notFoundException,
   required,
   unauthorizedException,
 } from '../../common/utils/validators.util';
@@ -169,6 +170,37 @@ export class UnitsService {
     return {
       tokenAmount: response.tokenAmount,
       unitPreferences: response.data,
+    };
+  }
+
+  /**
+   * Fetches a single unit's details by id, within the given project. There's no dedicated
+   * Salesforce "get unit by id" endpoint, so this fetches every unit for the project (same
+   * repository call as `getUnitsByProject`) and returns the one matching `unitId`.
+   *
+   * @param user - Authenticated user.
+   * @param projectId - Salesforce project id.
+   * @param unitId - Salesforce unit id.
+   * @throws {BadRequestException} When `projectId` or `unitId` is missing or blank.
+   * @throws {NotFoundException} When no unit matches `unitId` within the project.
+   * @returns The matching unit, wrapped in a `{ message, data }` envelope.
+   */
+  async getUnitDetails(
+    user: User,
+    projectId: string,
+    unitId: string,
+  ): Promise<ResultWithMessage<UnitDto>> {
+    unauthorizedException(!!user, 'Unauthorized');
+    required(projectId, 'projectId');
+    required(unitId, 'unitId');
+
+    const response = await this.unitsRepository.getUnitsByProject(projectId);
+    const unit = response.units.find((item) => item.unitId === unitId);
+    notFoundException(unit, `Unit with id ${unitId} not found`);
+
+    return {
+      message: response.message,
+      data: this.toUnitDto(unit),
     };
   }
 }

@@ -22,13 +22,46 @@ export interface OnboardingDetailsPayload {
   TradeLicenseExpiry?: string;
 }
 
+export interface PersonalDetailsPayload {
+  FirstName: string;
+  LastName: string;
+  Nationality: string;
+  PassportNumber: string;
+  PassportExpiry: string;
+  EmiratesId: string;
+  EidExpiry: string;
+  CountryCode: string;
+  Mobile: string;
+  Email: string;
+  AddressLine1: string;
+  AddressLine2?: string;
+  Country: string;
+  City: string;
+  PoBox?: string;
+  SrerdNumber?: string;
+  BrokerCardDetails?: string;
+  SrerdExpiry?: string;
+}
+
+export interface LicensePartnerPayload {
+  Name: string;
+  Nationality: string;
+  EmiratesId?: string;
+  PassportNo: string;
+  Role: string;
+  SharePercentage?: number;
+}
+
 export interface BankDetailsPayload {
   BankName: string;
   BankAccountName: string;
   BankAccountNumber: string;
+  BeneficiaryName: string;
   IBANNumber: string;
   SwiftCode: string;
   CurrencyValue: string;
+  BankBranchName?: string;
+  BankAddress?: string;
 }
 
 export interface OnboardingDocumentPayload {
@@ -40,8 +73,10 @@ export interface OnboardingDocumentPayload {
 }
 
 export interface CreateNewAccountPayload {
-  onboarding: OnboardingDetailsPayload;
+  onboarding?: OnboardingDetailsPayload;
+  personalDetails?: PersonalDetailsPayload;
   bank: BankDetailsPayload;
+  licensePartner?: LicensePartnerPayload[];
   documents: OnboardingDocumentPayload[];
 }
 

@@ -1,18 +1,22 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateNewAccountRepository } from '../repository/create-new-account.repository';
 import {
   BankDetailsPayload,
   CreateNewAccountPayload,
+  LicensePartnerPayload,
   OnboardingDetailsPayload,
   OnboardingDocumentPayload,
+  PersonalDetailsPayload,
 } from '../../salesforce/modules/createNewAccount/types/create-new-account.type';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { CreateNewAccountDto } from '../dto/create-new-account.dto';
 import { OnboardingDetailsDto } from '../dto/onboarding-details.dto';
+import { PersonalDetailsDto } from '../dto/personal-details.dto';
 import { BankDetailsDto } from '../dto/bank-details.dto';
+import { LicensePartnerDto } from '../dto/license-partner.dto';
 import { OnboardingDocumentDto } from '../dto/onboarding-document.dto';
 import { CreateNewAccountResultDto } from '../dto/create-new-account-result.dto';
 import { GetRequiredDocumentsDto } from '../dto/get-required-documents.dto';
@@ -60,17 +64,43 @@ export class CreateNewAccountService {
   /**
    * Maps the client DTO into the onboarding/bank/document payload shape expected by the Apex REST endpoint.
    *
-   * @param dto - Onboarding, bank, and document details submitted by the client.
+   * Company registrations send `onboarding`; individual (self-licensed) registrations send
+   * `personalDetails` instead - exactly one of the two must be present.
+   *
+   * @param dto - Onboarding or personal, bank, license partner, and document details submitted by the client.
    * @returns The Salesforce-shaped payload.
    */
   private toSalesforcePayload(
     dto: CreateNewAccountDto,
   ): CreateNewAccountPayload {
+    this.assertExactlyOneRegistrationType(dto);
+
     return {
-      onboarding: this.toOnboardingPayload(dto.onboarding),
+      onboarding: dto.onboarding
+        ? this.toOnboardingPayload(dto.onboarding)
+        : undefined,
+      personalDetails: dto.personalDetails
+        ? this.toPersonalDetailsPayload(dto.personalDetails)
+        : undefined,
       bank: this.toBankPayload(dto.bank),
+      licensePartner: dto.licensePartner?.map((partner) =>
+        this.toLicensePartnerPayload(partner),
+      ),
       documents: dto.documents.map((doc) => this.toDocumentPayload(doc)),
     };
+  }
+
+  /**
+   * Ensures the client submitted exactly one of `onboarding` (company) or `personalDetails`
+   * (individual) - the two DTOs have no required fields in common, so allowing both or
+   * neither would silently produce an incomplete Salesforce payload.
+   */
+  private assertExactlyOneRegistrationType(dto: CreateNewAccountDto): void {
+    if (!dto.onboarding === !dto.personalDetails) {
+      throw new BadRequestException(
+        'Provide exactly one of "onboarding" (company) or "personalDetails" (individual).',
+      );
+    }
   }
 
   private toOnboardingPayload(
@@ -101,14 +131,55 @@ export class CreateNewAccountService {
     };
   }
 
+  private toPersonalDetailsPayload(
+    personalDetails: PersonalDetailsDto,
+  ): PersonalDetailsPayload {
+    return {
+      FirstName: personalDetails.firstName,
+      LastName: personalDetails.lastName,
+      Nationality: personalDetails.nationality,
+      PassportNumber: personalDetails.passportNumber,
+      PassportExpiry: personalDetails.passportExpiry,
+      EmiratesId: personalDetails.emiratesId,
+      EidExpiry: personalDetails.eidExpiry,
+      CountryCode: personalDetails.countryCode,
+      Mobile: personalDetails.mobile,
+      Email: personalDetails.email,
+      AddressLine1: personalDetails.addressLine1,
+      AddressLine2: personalDetails.addressLine2,
+      Country: personalDetails.country,
+      City: personalDetails.city,
+      PoBox: personalDetails.poBox,
+      SrerdNumber: personalDetails.srerdNumber,
+      BrokerCardDetails: personalDetails.brokerCardDetails,
+      SrerdExpiry: personalDetails.srerdExpiry,
+    };
+  }
+
+  private toLicensePartnerPayload(
+    partner: LicensePartnerDto,
+  ): LicensePartnerPayload {
+    return {
+      Name: partner.name,
+      Nationality: partner.nationality,
+      EmiratesId: partner.emiratedId,
+      PassportNo: partner.passportNo,
+      Role: partner.role,
+      SharePercentage: partner.sharePercentage,
+    };
+  }
+
   private toBankPayload(bank: BankDetailsDto): BankDetailsPayload {
     return {
       BankName: bank.bankName,
       BankAccountName: bank.bankAccountName,
       BankAccountNumber: bank.bankAccountNumber,
+      BeneficiaryName: bank.beneficiaryName,
       IBANNumber: bank.ibanNumber,
       SwiftCode: bank.swiftCode,
       CurrencyValue: bank.currencyValue,
+      BankBranchName: bank.bankBranchName,
+      BankAddress: bank.bankAddress,
     };
   }
 
