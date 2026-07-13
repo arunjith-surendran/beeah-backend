@@ -590,6 +590,36 @@
             "description": "Fetches every unit belonging to the given project, paginated."
           },
           "response": []
+        },
+        {
+          "name": "Search Units By Project",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/units/search/{{projectId}}?query=Tulip&pageNumber=1&pageSize=10",
+            "description": "Searches units within a project whose name or code contains the given text (case-insensitive), paginated."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unit Preferences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/units/preferences-get-all/{{projectId}}",
+            "description": "Fetches the unit preference (unit type) options and token amount for a given project."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unit Details By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/units/unit-details/{{projectId}}/{{unitId}}",
+            "description": "Fetches a single unit's details by id within the given project. There's no dedicated Salesforce get-unit-by-id call, so this fetches every unit for the project (same as get-all) and returns the one matching unitId."
+          },
+          "response": []
         }
       ]
     },
@@ -636,7 +666,7 @@
       "name": "Create New Account",
       "item": [
         {
-          "name": "Create New Account",
+          "name": "Create New Account - Company (UAE/International Agency)",
           "request": {
             "method": "POST",
             "header": [
@@ -646,10 +676,37 @@
               }
             ],
             "url": "{{baseUrl}}/create-new-account/add",
-            "description": "Submits a new agency onboarding application, including bank and document details. Public endpoint (no auth) as part of the onboarding flow.",
+            "description": "Submits a new company agency onboarding application (onboarding + bank + documents). Public endpoint (no auth) as part of the onboarding flow. Exactly one of onboarding/personalDetails must be present.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"onboarding\": {\n    \"subType\": \"UAE Agency\",\n    \"agencyName\": \"Example Realty\",\n    \"email\": \"agency@example.com\",\n    \"phone\": \"+971501234567\",\n    \"type\": \"Agency\",\n    \"role\": \"Broker\",\n    \"poBox\": \"12345\",\n    \"ownerShipType\": \"LLC\",\n    \"companyReraRegistrationNumber\": \"RERA-12345\",\n    \"companyReraExpiry\": \"2027-01-01\",\n    \"authorizedWith\": \"Signatory\",\n    \"haveTrn\": \"100123456700003\",\n    \"authorizedSignatoryEmail\": \"signatory@example.com\",\n    \"authorizedSignatoryMobile\": \"501234568\",\n    \"authorizedSignatoryCountryCode\": \"+971\",\n    \"addressLine1\": \"123 Sheikh Zayed Road\",\n    \"addressLine2\": \"\",\n    \"city\": \"Dubai\",\n    \"country\": \"United Arab Emirates\",\n    \"tradeLicenseNumber\": \"TL-12345\",\n    \"tradeLicenseExpiry\": \"2027-01-01\"\n  },\n  \"bank\": {\n    \"bankName\": \"Emirates NBD\",\n    \"bankAccountName\": \"Example Realty\",\n    \"bankAccountNumber\": \"1234567890\",\n    \"ibanNumber\": \"AE123456789012345678901\",\n    \"swiftCode\": \"EBILAEAD\",\n    \"currencyValue\": \"AED\"\n  },\n  \"documents\": [\n    {\n      \"documentType\": \"Trade License\",\n      \"fileName\": \"trade_license.pdf\",\n      \"base64Data\": \"<base64-encoded-file-content>\",\n      \"issueDate\": \"2022-01-01\",\n      \"expiryDate\": \"2027-01-01\"\n    }\n  ]\n}",
+              "raw": "{\n  \"onboarding\": {\n    \"subType\": \"UAE Agency\",\n    \"agencyName\": \"Example Realty\",\n    \"email\": \"agency@example.com\",\n    \"phone\": \"+971501234567\",\n    \"type\": \"Agency\",\n    \"role\": \"Broker\",\n    \"poBox\": \"12345\",\n    \"ownerShipType\": \"LLC\",\n    \"companyReraRegistrationNumber\": \"RERA-12345\",\n    \"companyReraExpiry\": \"2027-01-01\",\n    \"authorizedWith\": \"Signatory\",\n    \"haveTrn\": \"100123456700003\",\n    \"authorizedSignatoryEmail\": \"signatory@example.com\",\n    \"authorizedSignatoryMobile\": \"501234568\",\n    \"authorizedSignatoryCountryCode\": \"+971\",\n    \"addressLine1\": \"123 Sheikh Zayed Road\",\n    \"addressLine2\": \"\",\n    \"city\": \"Dubai\",\n    \"country\": \"United Arab Emirates\",\n    \"tradeLicenseNumber\": \"TL-12345\",\n    \"tradeLicenseExpiry\": \"2027-01-01\"\n  },\n  \"bank\": {\n    \"bankName\": \"Emirates NBD\",\n    \"bankAccountName\": \"Example Realty\",\n    \"bankAccountNumber\": \"1234567890\",\n    \"beneficiaryName\": \"Example Realty\",\n    \"ibanNumber\": \"AE123456789012345678901\",\n    \"swiftCode\": \"EBILAEAD\",\n    \"currencyValue\": \"AED\",\n    \"bankBranchName\": \"Downtown Dubai Branch\",\n    \"bankAddress\": \"Sheikh Zayed Road, Dubai\"\n  },\n  \"documents\": [\n    {\n      \"documentType\": \"Trade License\",\n      \"fileName\": \"trade_license.pdf\",\n      \"base64Data\": \"<base64-encoded-file-content>\",\n      \"issueDate\": \"2022-01-01\",\n      \"expiryDate\": \"2027-01-01\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create New Account - Individual (Self-Licensed)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/create-new-account/add",
+            "description": "Submits a new individual (self-licensed) agency onboarding application (personalDetails + bank + optional licensePartner + documents). Public endpoint (no auth) as part of the onboarding flow. Exactly one of onboarding/personalDetails must be present.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personalDetails\": {\n    \"firstName\": \"Aanand\",\n    \"lastName\": \"Yadav\",\n    \"nationality\": \"Indian\",\n    \"passportNumber\": \"P123456789\",\n    \"passportExpiry\": \"2029-09-09\",\n    \"emiratesId\": \"784-1989-1234567-1\",\n    \"eidExpiry\": \"2029-09-09\",\n    \"countryCode\": \"971\",\n    \"mobile\": \"501234567\",\n    \"email\": \"agent@example.com\",\n    \"addressLine1\": \"Dubai\",\n    \"addressLine2\": \"\",\n    \"country\": \"United Arab Emirates\",\n    \"city\": \"Dubai\",\n    \"poBox\": \"456789765\",\n    \"srerdNumber\": \"89757467890\",\n    \"brokerCardDetails\": \"RERA\",\n    \"srerdExpiry\": \"2029-09-09\"\n  },\n  \"bank\": {\n    \"bankName\": \"Emirates NBD\",\n    \"bankAccountName\": \"Aanand Yadav\",\n    \"bankAccountNumber\": \"1234567890\",\n    \"beneficiaryName\": \"Aanand Yadav\",\n    \"ibanNumber\": \"AE070331234567890123456\",\n    \"swiftCode\": \"EBILAEAD\",\n    \"currencyValue\": \"AED\",\n    \"bankBranchName\": \"Dubai Main Branch\",\n    \"bankAddress\": \"Dubai, UAE\"\n  },\n  \"licensePartner\": [\n    {\n      \"name\": \"Aanand Yadav\",\n      \"nationality\": \"Indian\",\n      \"emiratedId\": \"784-1989-1234567-1\",\n      \"passportNo\": \"P123456789\",\n      \"role\": \"Share Owner\",\n      \"sharePercentage\": 100\n    }\n  ],\n  \"documents\": []\n}",
               "options": {
                 "raw": {
                   "language": "json"
