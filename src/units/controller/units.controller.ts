@@ -81,4 +81,23 @@ export class UnitsController {
   ): Promise<ResultWithMessage<UnitPreferenceListDto>> {
     return this.unitsService.getUnitPreferences(user, projectId);
   }
+
+  /**
+   * Fetches a single unit's details by id, within the given project. There's no dedicated
+   * Salesforce "get unit by id" endpoint, so this fetches every unit for the project (same as
+   * `get-all/:projectId`) and returns the one matching `unitId`.
+   *
+   * @param user - Authenticated user attached by `JwtAuthGuard`.
+   * @param projectId - Salesforce project id, taken from the route path.
+   * @param unitId - Salesforce unit id, taken from the route path.
+   * @returns The matching unit, wrapped in a `{ message, data }` envelope.
+   */
+  @Get('unit-details/:projectId/:unitId')
+  getUnitDetails(
+    @CurrentUser() user: User,
+    @Param('projectId') projectId: string,
+    @Param('unitId') unitId: string,
+  ): Promise<ResultWithMessage<UnitDto>> {
+    return this.unitsService.getUnitDetails(user, projectId, unitId);
+  }
 }
