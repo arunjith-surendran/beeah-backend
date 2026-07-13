@@ -6,6 +6,7 @@ import type { User } from '@prisma/client';
 import { UnitsRepository } from '../repository/units.repository';
 import { Unit } from '../../salesforce/modules/units/types/get-units.type';
 import { GetUnitPreferenceApexResponse } from '../../salesforce/modules/units/types/get-unit-preference.type';
+import { ProjectService } from '../../project/service/project.service';
 import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-result-with-message.interface';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { paginate } from '../../common/utils/paginate.util';
@@ -19,7 +20,10 @@ import { UnitPreferenceListDto } from '../dto/unit-preference-list.dto';
 
 @Injectable()
 export class UnitsService {
-  constructor(private readonly unitsRepository: UnitsRepository) {}
+  constructor(
+    private readonly unitsRepository: UnitsRepository,
+    private readonly projectService: ProjectService,
+  ) {}
 
   /**
    * Fetches every unit for the given project, maps them to `UnitDto`, and returns the requested page.
@@ -42,6 +46,7 @@ export class UnitsService {
 
     const response = await this.unitsRepository.getUnitsByProject(projectId);
     const paged = paginate(response.units, pageNumber, pageSize);
+    const projectImage = await this.getProjectImage(user, projectId);
 
     return {
       message: response.message,
@@ -53,7 +58,7 @@ export class UnitsService {
         hasNext: paged.hasNext,
         hasPrevious: paged.hasPrevious,
       },
-      data: paged.items.map((unit) => this.toUnitDto(unit)),
+      data: paged.items.map((unit) => this.toUnitDto(unit, projectImage)),
     };
   }
 
@@ -89,6 +94,7 @@ export class UnitsService {
         unit.unitCode?.toLowerCase().includes(search),
     );
     const paged = paginate(matched, pageNumber, pageSize);
+    const projectImage = await this.getProjectImage(user, projectId);
 
     return {
       message: response.message,
@@ -100,17 +106,66 @@ export class UnitsService {
         hasNext: paged.hasNext,
         hasPrevious: paged.hasPrevious,
       },
-      data: paged.items.map((unit) => this.toUnitDto(unit)),
+      data: paged.items.map((unit) => this.toUnitDto(unit, projectImage)),
     };
+  }
+
+  /**
+   * Fetches the parent project's image, to use as a fallback when a unit has none of its
+   * own. Never throws - a project lookup failure just means no fallback image is available.
+   *
+   * @param user - Authenticated user.
+   * @param projectId - Salesforce project id.
+   * @returns The project's first "Images"-typed document url, or `null` if unavailable.
+   */
+  private async getProjectImage(
+    user: User,
+    projectId: string,
+  ): Promise<string | null> {
+    try {
+      const result = await this.projectService.getProjectDetailsById(
+        user,
+        projectId,
+      );
+      const project = result.data[0];
+      const imageDoc =
+        project?.documents.find((doc) => doc.type === 'Images') ??
+        project?.documents.find((doc) => !!doc.url);
+      return imageDoc?.url ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Best-effort extraction of a unit's own image url from its raw `documents` array. The
+   * Salesforce `getunits` response hasn't been observed to reliably populate this, so the
+   * shape is unverified - this only trusts entries that clearly carry a url-like string field.
+   *
+   * @param documents - Raw, untyped unit document list from the Salesforce Apex REST response.
+   * @returns The first plausible image url found, or `null`.
+   */
+  private extractUnitImage(documents: unknown[]): string | null {
+    for (const doc of documents) {
+      if (doc && typeof doc === 'object') {
+        const record = doc as Record<string, unknown>;
+        const url = record.documentUrl1 ?? record.url;
+        if (typeof url === 'string' && url.length > 0) {
+          return url;
+        }
+      }
+    }
+    return null;
   }
 
   /**
    * Maps a raw Salesforce `Unit` record into the API's `UnitDto` shape.
    *
    * @param unit - Raw unit record returned by the Salesforce Apex REST endpoint.
+   * @param projectImage - The parent project's image, used when the unit has none of its own.
    * @returns The unit shaped for API consumers, with price coerced to a number.
    */
-  private toUnitDto(unit: Unit): UnitDto {
+  private toUnitDto(unit: Unit, projectImage: string | null): UnitDto {
     return {
       id: unit.unitId,
       code: unit.unitCode,
@@ -129,6 +184,7 @@ export class UnitsService {
       area: unit.area,
       approvalStatus: unit.approvalStatus,
       apartmentType: unit.apartmentType,
+      image: this.extractUnitImage(unit.documents) ?? projectImage,
     };
   }
 
@@ -197,10 +253,11 @@ export class UnitsService {
     const response = await this.unitsRepository.getUnitsByProject(projectId);
     const unit = response.units.find((item) => item.unitId === unitId);
     notFoundException(unit, `Unit with id ${unitId} not found`);
+    const projectImage = await this.getProjectImage(user, projectId);
 
     return {
       message: response.message,
-      data: this.toUnitDto(unit),
+      data: this.toUnitDto(unit, projectImage),
     };
   }
 }

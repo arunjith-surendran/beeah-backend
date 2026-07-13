@@ -16,4 +16,7 @@ export class UnitDto {
   area: number | null;
   approvalStatus: string | null;
   apartmentType: string | null;
+  // The unit's own image when Salesforce provides one; otherwise the parent
+  // project's image, so consumers always have something to render.
+  image: string | null;
 }
