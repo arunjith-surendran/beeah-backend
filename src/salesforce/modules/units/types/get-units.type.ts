@@ -37,12 +37,22 @@ interface UnitBuildingGroup {
   buildingId: string | null;
 }
 
-export interface GetUnitsApexRawResponse {
-  status: string;
-  noOfUnits: number;
-  message: string;
-  data: UnitBuildingGroup[];
-}
+// When a project has units, Salesforce groups them by building under `data`. When it
+// doesn't, it instead sends a flat (empty) `units` array with no `data` field at all -
+// both shapes need to be handled, not just the grouped one.
+export type GetUnitsApexRawResponse =
+  | {
+      status: string;
+      noOfUnits: number;
+      message: string;
+      data: UnitBuildingGroup[];
+    }
+  | {
+      status: string;
+      noOfUnits: number;
+      message: string;
+      units: RawUnit[];
+    };
 
 // Flattened shape the rest of the app relies on - buildingId merged onto each unit
 // so callers don't need to know about the group-by-building wrapper.

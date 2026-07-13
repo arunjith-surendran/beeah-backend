@@ -6,6 +6,13 @@ export class EoiDetailDto {
   projectId: string | null;
   projectName: string | null;
   buyerName: string | null;
+  actualName: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  mobile: string | null;
+  eidNo: string | null;
+  agentFirstName: string | null;
+  agentLastName: string | null;
   buyerType: string | null;
   bookingType: string | null;
   companyName: string | null;

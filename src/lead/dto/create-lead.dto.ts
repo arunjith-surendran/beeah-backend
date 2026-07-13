@@ -29,10 +29,6 @@ export class CreateLeadDto {
   @IsNotEmpty()
   firstName: string;
 
-  @IsOptional()
-  @IsString()
-  middleName?: string;
-
   @IsString()
   @IsNotEmpty()
   lastName: string;

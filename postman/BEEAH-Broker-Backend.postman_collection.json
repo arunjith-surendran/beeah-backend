@@ -242,7 +242,7 @@
             "description": "Creates a new Salesforce lead. The interested project is optional, matching the real Salesforce broker portal lead-creation form.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"countryCode\": \"+971\",\n  \"countryOfResident\": \"United Arab Emirates\",\n  \"email\": \"lead@example.com\",\n  \"firstName\": \"Jane\",\n  \"middleName\": \"\",\n  \"lastName\": \"Smith\",\n  \"mobilePhone\": \"501234567\",\n  \"recordTypeDeveloperName\": \"Individual\",\n  \"createdByPortalUser\": true,\n  \"company\": \"\",\n  \"interestedPropertyType\": \"Villas\",\n  \"noOfBedroom\": \"2\",\n  \"preferredLanguage\": \"English\",\n  \"budgetRange\": \"100000-200000\",\n  \"description\": \"\"\n}",
+              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"countryCode\": \"United Arab Emirates: 971\",\n  \"countryOfResident\": \"United Arab Emirates\",\n  \"email\": \"lead@example.com\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"mobilePhone\": \"501234567\",\n  \"recordTypeDeveloperName\": \"Individual_Broker\",\n  \"createdByPortalUser\": true,\n  \"company\": \"\",\n  \"interestedPropertyType\": \"Villas\",\n  \"noOfBedroom\": \"2\",\n  \"preferredLanguage\": \"English\",\n  \"budgetRange\": \"100000-200000\",\n  \"description\": \"\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -259,6 +259,39 @@
             "header": [],
             "url": "{{baseUrl}}/leads/get-all?pageNumber=1&pageSize=10",
             "description": "Fetches every lead owned by the authenticated Salesforce user, paginated."
+          },
+          "response": []
+        },
+        {
+          "name": "Search Leads",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/leads/search?query=John&pageNumber=1&pageSize=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "leads",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "John"
+                },
+                {
+                  "key": "pageNumber",
+                  "value": "1"
+                },
+                {
+                  "key": "pageSize",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Searches the authenticated user's leads by id, name, email, or mobile phone."
           },
           "response": []
         }

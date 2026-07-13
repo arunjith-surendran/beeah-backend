@@ -46,4 +46,30 @@ export class LeadController {
   ): Promise<PaginatedResultWithMessage<LeadDetailDto[]>> {
     return this.leadService.getLeadsByUser(user, pageNumber, pageSize);
   }
+
+  /**
+   * Searches leads owned by the Salesforce user our client-credentials grant
+   * authenticates as, matching `query` against id/name/email/mobile phone, paginated
+   * on our side.
+   *
+   * @param user - Authenticated user attached by `JwtAuthGuard`.
+   * @param query - Search term matched against the lead's id, name, email, or mobile phone.
+   * @param pageNumber - 1-based page number. Defaults to 1.
+   * @param pageSize - Page size. Defaults to 10.
+   * @returns The requested page of matching leads wrapped in a `{ message, data }` envelope.
+   */
+  @Get('search')
+  searchLeadsByUser(
+    @CurrentUser() user: User,
+    @Query('query') query: string,
+    @Query('pageNumber') pageNumber?: string,
+    @Query('pageSize') pageSize?: string,
+  ): Promise<PaginatedResultWithMessage<LeadDetailDto[]>> {
+    return this.leadService.searchLeadsByUser(
+      user,
+      query,
+      pageNumber,
+      pageSize,
+    );
+  }
 }

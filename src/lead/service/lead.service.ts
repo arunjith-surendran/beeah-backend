@@ -5,7 +5,10 @@ import { LeadRecord } from '../../salesforce/modules/lead/types/get-leads.type';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-result-with-message.interface';
 import { paginate } from '../../common/utils/paginate.util';
-import { unauthorizedException } from '../../common/utils/validators.util';
+import {
+  required,
+  unauthorizedException,
+} from '../../common/utils/validators.util';
 import { SalesforceClient } from '../../salesforce/network/salesforce.client';
 import { CreateLeadDto, CreateLeadResponseDto } from '../dto/create-lead.dto';
 import { LeadDetailDto } from '../dto/get-leads.dto';
@@ -37,7 +40,6 @@ export class LeadService {
       countryOfResident: dto.countryOfResident,
       email: dto.email,
       firstName: dto.firstName,
-      middleName: dto.middleName,
       lastName: dto.lastName,
       mobilePhone: dto.mobilePhone,
       recordTypeDeveloperName: dto.recordTypeDeveloperName,
@@ -75,6 +77,59 @@ export class LeadService {
     const userId = await this.salesforceClient.getUserId();
     const response = await this.leadRepository.getLeadsByUser(userId);
     const paged = paginate(response.LeadDetails, pageNumber, pageSize);
+
+    return {
+      message: response.message,
+      pagination: {
+        pageNumber: paged.pageNumber,
+        pageSize: paged.pageSize,
+        total: paged.total,
+        totalPages: paged.totalPages,
+        hasNext: paged.hasNext,
+        hasPrevious: paged.hasPrevious,
+      },
+      data: paged.items.map((lead) => this.toLeadDetailDto(lead)),
+    };
+  }
+
+  /**
+   * Fetches every lead owned by the Salesforce user our client-credentials grant
+   * authenticates as, filters it down to those matching `query` by id/name/email/mobile,
+   * and returns the requested page of matches.
+   *
+   * @param user - Authenticated user.
+   * @param query - Search term matched case-insensitively against the lead's id, name,
+   * email, or mobile phone.
+   * @param pageNumber - 1-based page number. Defaults to 1.
+   * @param pageSize - Page size. Defaults to 10.
+   * @throws {BadRequestException} When `query` is missing or blank.
+   * @returns The requested page of matching leads, with pagination metadata alongside `message`.
+   */
+  async searchLeadsByUser(
+    user: User,
+    query: string,
+    pageNumber?: string,
+    pageSize?: string,
+  ): Promise<PaginatedResultWithMessage<LeadDetailDto[]>> {
+    unauthorizedException(!!user, 'Unauthorized');
+    required(query, 'query');
+
+    const userId = await this.salesforceClient.getUserId();
+    const response = await this.leadRepository.getLeadsByUser(userId);
+    const search = query.trim().toLowerCase();
+
+    const matched = response.LeadDetails.filter((lead) => {
+      const fields = [
+        lead.Name,
+        lead.FirstName,
+        lead.LastName,
+        lead.Email,
+        lead.MobilePhone,
+        lead.Lead_Id__c,
+      ];
+      return fields.some((field) => field?.toLowerCase().includes(search));
+    });
+    const paged = paginate(matched, pageNumber, pageSize);
 
     return {
       message: response.message,

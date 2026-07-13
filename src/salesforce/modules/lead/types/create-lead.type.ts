@@ -4,7 +4,6 @@ export interface CreateLeadApexPayload {
   countryOfResident: string;
   email: string;
   firstName: string;
-  middleName?: string;
   lastName: string;
   mobilePhone: string;
   recordTypeDeveloperName: string;

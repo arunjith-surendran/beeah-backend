@@ -20,7 +20,9 @@ export class UnitsService {
   /**
    * Calls the Salesforce `getunits` Apex REST endpoint for a given project and flattens
    * its per-building grouping (`data: [{ units, buildingId }]`) into a single unit list,
-   * merging each group's `buildingId` onto every unit within it.
+   * merging each group's `buildingId` onto every unit within it. When the project has no
+   * units, Salesforce instead sends a flat (empty) `units` array with no `data` field -
+   * that shape is passed through as-is rather than assuming `data` is always present.
    *
    * @param projectId - Salesforce project id to fetch units for.
    * @returns The project's unit records as a flat list, with buildingId per unit.
@@ -37,9 +39,15 @@ export class UnitsService {
       status: raw.status,
       noOfUnits: raw.noOfUnits,
       message: raw.message,
-      units: raw.data.flatMap((group) =>
-        group.units.map((unit) => ({ ...unit, buildingId: group.buildingId })),
-      ),
+      units:
+        'data' in raw
+          ? raw.data.flatMap((group) =>
+              group.units.map((unit) => ({
+                ...unit,
+                buildingId: group.buildingId,
+              })),
+            )
+          : raw.units.map((unit) => ({ ...unit, buildingId: null })),
     };
   }
 

@@ -6,6 +6,13 @@ export interface EoiRecord {
   Project__c: string | null;
   Project_Name1__c: string | null;
   Buyer_Name__c: string | null;
+  ActualName__c: string | null;
+  First_Name__c: string | null;
+  Last_Name__c: string | null;
+  Mobile__c: string | null;
+  EID_No__c: string | null;
+  Agent_FirstName: string | null;
+  Agent_LastName: string | null;
   Buyer_Type__c: string | null;
   Booking_Type__c: string | null;
   Company_Name__c: string | null;
