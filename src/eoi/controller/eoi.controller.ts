@@ -20,6 +20,8 @@ import { CreateEoiResultDto } from '../dto/create-eoi-result.dto';
 import { EoiDetailDto } from '../dto/get-eois.dto';
 import { CreateModeOfPaymentDto } from '../dto/create-mode-of-payment.dto';
 import { CreateModeOfPaymentResultDto } from '../dto/create-mode-of-payment-result.dto';
+import { SubmitEoiDto } from '../dto/submit-eoi.dto';
+import { SubmitEoiResultDto } from '../dto/submit-eoi-result.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('eoi')
@@ -39,6 +41,18 @@ export class EoiController {
     @Body() dto: CreateEoiDto,
   ): Promise<ResultWithMessage<CreateEoiResultDto>> {
     return this.eoiService.createEoi(user, dto);
+  }
+
+  /**
+   * Creates an EOI, uploads EOI/payment documents against the created EOI id,
+   * and records mode-of-payment details in one app-facing request.
+   */
+  @Post('submit')
+  submitEoi(
+    @CurrentUser() user: User,
+    @Body() dto: SubmitEoiDto,
+  ): Promise<ResultWithMessage<SubmitEoiResultDto>> {
+    return this.eoiService.submitEoi(user, dto);
   }
 
   /**

@@ -14,6 +14,10 @@ import { CreateModeOfPaymentApexPayload } from '../../salesforce/modules/eoi/typ
 import { CreateModeOfPaymentDto } from '../dto/create-mode-of-payment.dto';
 import { CreateModeOfPaymentResultDto } from '../dto/create-mode-of-payment-result.dto';
 import { ModeOfPaymentDto } from '../dto/mode-of-payment.dto';
+import { SubmitEoiDto } from '../dto/submit-eoi.dto';
+import { SubmitEoiResultDto } from '../dto/submit-eoi-result.dto';
+import { DocumentService } from '../../document/service/document.service';
+import { UploadDocumentResultDto } from '../../document/dto/upload-document-result.dto';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-result-with-message.interface';
 import { paginate } from '../../common/utils/paginate.util';
@@ -28,13 +32,14 @@ export class EoiService {
   constructor(
     private readonly eoiRepository: EoiRepository,
     private readonly salesforceClient: SalesforceClient,
+    private readonly documentService: DocumentService,
   ) {}
 
   /**
    * Builds the Salesforce `createEOI` payload from the client DTO and submits it.
    *
    * @param user - Authenticated user.
-   * @param dto - New EOI's details, including buyer info and unit preferences.
+   * @param dto - New EOI's details, including buyer/company/representative info and unit preferences.
    * @returns The created record/lead/account ids wrapped in a `{ message, data }` envelope.
    */
   async createEoi(
@@ -43,8 +48,9 @@ export class EoiService {
   ): Promise<ResultWithMessage<CreateEoiResultDto>> {
     unauthorizedException(!!user, 'Unauthorized');
 
+    const userId = await this.salesforceClient.getUserId();
     const response = await this.eoiRepository.createEoi(
-      this.toApexPayload(dto),
+      this.toApexPayload(dto, userId),
     );
 
     return {
@@ -53,6 +59,46 @@ export class EoiService {
         recordId: response.recordId,
         leadId: response.leadId,
         accountId: response.AccountId,
+      },
+    };
+  }
+
+  /**
+   * Creates an EOI and then attaches all selected documents to the returned EOI
+   * record id before recording mode-of-payment details.
+   */
+  async submitEoi(
+    user: User,
+    dto: SubmitEoiDto,
+  ): Promise<ResultWithMessage<SubmitEoiResultDto>> {
+    const createdEoi = await this.createEoi(user, dto.eoiInfo);
+    const recordId = createdEoi.data.recordId;
+    const documents: UploadDocumentResultDto[] = [];
+
+    for (const document of dto.documents ?? []) {
+      const uploaded = await this.documentService.uploadDocument(user, {
+        fileName: document.fileName,
+        base64: document.base64,
+        recordId,
+        documentType: document.documentType,
+      });
+      documents.push(uploaded.data);
+    }
+
+    let modeOfPayment: CreateModeOfPaymentResultDto | null = null;
+    if (dto.modeOfPayments?.length) {
+      const payment = await this.createModeOfPayment(user, recordId, {
+        modeOfPayments: dto.modeOfPayments,
+      });
+      modeOfPayment = payment.data;
+    }
+
+    return {
+      message: 'EOI submitted successfully',
+      data: {
+        eoi: createdEoi.data,
+        documents,
+        modeOfPayment,
       },
     };
   }
@@ -144,31 +190,60 @@ export class EoiService {
    * @param dto - New EOI's details submitted by the client.
    * @returns The Salesforce-shaped payload.
    */
-  private toApexPayload(dto: CreateEoiDto): CreateEoiApexPayload {
+  private toApexPayload(
+    dto: CreateEoiDto,
+    userId: string,
+  ): CreateEoiApexPayload {
     return {
-      Project_Id: dto.projectId,
-      countryCode: dto.countryCode,
-      countryOfResident: dto.countryOfResident,
-      email: dto.email,
-      firstName: dto.firstName,
+      booking_Type: dto.bookingType,
+      projectId: dto.projectId,
+      buyer_Type: dto.buyerType,
+      property_Type: dto.propertyType,
+      userId,
+      createdByPortalUser: dto.createdByPortalUser,
+      leadId: dto.leadId,
+      salutation: dto.salutation,
+      FirstName: dto.firstName,
       middleName: dto.middleName,
-      lastName: dto.lastName,
-      mobilePhone: dto.mobilePhone,
+      LastName: dto.lastName,
+      email: dto.email,
+      countryCode: dto.countryCode,
+      mobileNo: dto.mobileNo,
+      countryOfResidence: dto.countryOfResidence,
+      country: dto.country,
+      address: dto.address,
+      firstApplicantAddress: dto.firstApplicantAddress,
+      city: dto.city,
       leadSource: dto.leadSource,
       recordTypeDeveloperName: dto.recordTypeDeveloperName,
-      preferences: dto.preferences.map((preference) => ({
-        unitPrefernce: preference.unitPrefernce,
-        noOfUnits: preference.noOfUnits,
-        eoiAmount: preference.eoiAmount,
-      })),
-      city: dto.city,
-      country: dto.country,
+      companyName: dto.companyName,
+      companyRegistrationPlace: dto.companyRegistrationPlace,
+      companyRegistrationDate: dto.companyRegistrationDate,
+      tradeLicenseNo: dto.tradeLicenseNo,
+      tradeLicenseExpiryDate: dto.tradeLicenseExpiryDate,
+      tradeLicenseIssueDate: dto.tradeLicenseIssueDate,
+      companyEmail: dto.companyEmail,
+      corpAddress: dto.corpAddress,
+      corpCountry: dto.corpCountry,
+      corpCity: dto.corpCity,
+      corpPostalCode: dto.corpPostalCode,
+      representativeSalutation: dto.representativeSalutation,
+      representativeFirstName: dto.representativeFirstName,
+      representativeLastName: dto.representativeLastName,
+      representativeEmail: dto.representativeEmail,
+      representativeCountryCode: dto.representativeCountryCode,
+      representativeMobileNo: dto.representativeMobileNo,
       nationality: dto.nationality,
       passportExpiry: dto.passportExpiry,
       eidNo: dto.eidNo,
       emiratesExpiry: dto.emiratesExpiry,
-      firstApplicantAddress: dto.firstApplicantAddress,
       postalCode: dto.postalCode,
+      vatCertificateNo: dto.vatCertificateNo,
+      unitPreferences: dto.unitPreferences.map((preference) => ({
+        unitType: preference.unitType,
+        noOfUnits: preference.noOfUnits,
+        eoiAmount: preference.eoiAmount,
+      })),
     };
   }
 
