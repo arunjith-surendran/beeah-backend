@@ -66,6 +66,7 @@ export class CreateNewAccountService {
       data: {
         onboardingId: response.onboardingId,
         bankId: response.bankId,
+        documentIds: dto.documents.map((doc) => doc.documentId),
       },
     };
   }
