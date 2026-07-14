@@ -99,12 +99,10 @@ export interface BankDetailsPayload {
   bankAddress?: string;
 }
 
+// Documents are uploaded individually beforehand (POST /create-new-account/upload-document)
+// - the final submission only references each one's returned documentId.
 export interface OnboardingDocumentPayload {
-  documentType: string;
-  fileName: string;
-  base64Data: string;
-  issueDate?: string;
-  expiryDate?: string;
+  documentId: string;
 }
 
 export interface CreateNewAccountPayload {

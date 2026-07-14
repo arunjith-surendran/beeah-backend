@@ -5,6 +5,8 @@ import { ResultWithMessage } from '../../common/interfaces/result-with-message.i
 import { CreateNewAccountResultDto } from '../dto/create-new-account-result.dto';
 import { GetRequiredDocumentsDto } from '../dto/get-required-documents.dto';
 import { RequiredDocumentDto } from '../dto/required-document.dto';
+import { UploadOnboardingDocumentDto } from '../dto/upload-onboarding-document.dto';
+import { UploadOnboardingDocumentResultDto } from '../dto/upload-onboarding-document-result.dto';
 import { AgencySubTypeGroupDto } from '../dto/agency-sub-type-group.dto';
 
 @Controller('create-new-account')
@@ -24,6 +26,21 @@ export class CreateNewAccountController {
     @Body() dto: CreateNewAccountDto,
   ): Promise<ResultWithMessage<CreateNewAccountResultDto>> {
     return this.createNewAccountService.createNewAccount(dto);
+  }
+
+  /**
+   * Uploads a single onboarding document ahead of the final `add` submission - no
+   * Salesforce record exists yet for it to attach to, so this returns a documentId
+   * to reference in that submission's `documents` array instead.
+   *
+   * @param dto - File name, base64 content, and document type.
+   * @returns The created document id wrapped in a `{ message, data }` envelope.
+   */
+  @Post('upload-document')
+  uploadDocument(
+    @Body() dto: UploadOnboardingDocumentDto,
+  ): Promise<ResultWithMessage<UploadOnboardingDocumentResultDto>> {
+    return this.createNewAccountService.uploadDocument(dto);
   }
 
   /**

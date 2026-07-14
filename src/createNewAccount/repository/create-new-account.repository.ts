@@ -8,11 +8,17 @@ import {
   GetRequiredDocumentsApexPayload,
   GetRequiredDocumentsApexResponse,
 } from '../../salesforce/modules/createNewAccount/types/get-required-documents.type';
+import { DocumentService as SalesforceDocumentService } from '../../salesforce/modules/document/document.service';
+import {
+  UploadDocumentApexPayload,
+  UploadDocumentApexResponse,
+} from '../../salesforce/modules/document/types/upload-document.type';
 
 @Injectable()
 export class CreateNewAccountRepository {
   constructor(
     private readonly salesforceCreateNewAccountService: SalesforceCreateNewAccountService,
+    private readonly salesforceDocumentService: SalesforceDocumentService,
   ) {}
 
   /**
@@ -37,5 +43,19 @@ export class CreateNewAccountRepository {
     payload: GetRequiredDocumentsApexPayload,
   ): Promise<GetRequiredDocumentsApexResponse> {
     return this.salesforceCreateNewAccountService.getRequiredDocuments(payload);
+  }
+
+  /**
+   * Passes through to the shared Salesforce `uploadDocument` Apex REST endpoint,
+   * without a recordId - used to upload onboarding documents before the account
+   * (and therefore any Salesforce record to attach them to) exists.
+   *
+   * @param payload - File name, base64 content, and document type.
+   * @returns The raw Apex REST response containing the created document id.
+   */
+  uploadDocument(
+    payload: UploadDocumentApexPayload,
+  ): Promise<UploadDocumentApexResponse> {
+    return this.salesforceDocumentService.uploadDocument(payload);
   }
 }

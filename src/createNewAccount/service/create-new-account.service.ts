@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateNewAccountRepository } from '../repository/create-new-account.repository';
 import {
@@ -24,6 +28,8 @@ import { OnboardingDocumentDto } from '../dto/onboarding-document.dto';
 import { CreateNewAccountResultDto } from '../dto/create-new-account-result.dto';
 import { GetRequiredDocumentsDto } from '../dto/get-required-documents.dto';
 import { RequiredDocumentDto } from '../dto/required-document.dto';
+import { UploadOnboardingDocumentDto } from '../dto/upload-onboarding-document.dto';
+import { UploadOnboardingDocumentResultDto } from '../dto/upload-onboarding-document-result.dto';
 import { AgencySubType } from '../dto/agency-sub-type.enum';
 import { AgencyCategory } from '../dto/agency-category.enum';
 import { AgencySubTypeGroupDto } from '../dto/agency-sub-type-group.dto';
@@ -239,11 +245,41 @@ export class CreateNewAccountService {
     doc: OnboardingDocumentDto,
   ): OnboardingDocumentPayload {
     return {
-      documentType: doc.documentType,
-      fileName: doc.fileName,
-      base64Data: doc.base64Data,
-      issueDate: doc.issueDate,
-      expiryDate: doc.expiryDate,
+      documentId: doc.documentId,
+    };
+  }
+
+  /**
+   * Uploads a single onboarding document ahead of the final create-new-account
+   * submission, via the shared Salesforce `uploadDocument` Apex REST endpoint with
+   * no recordId (no Salesforce record exists yet for it to attach to). The returned
+   * documentId is referenced in the `documents` array of the create-new-account call
+   * that follows.
+   *
+   * @param dto - File name, base64 content, and document type.
+   * @returns The created document id wrapped in a `{ message, data }` envelope.
+   */
+  async uploadDocument(
+    dto: UploadOnboardingDocumentDto,
+  ): Promise<ResultWithMessage<UploadOnboardingDocumentResultDto>> {
+    const response = await this.createNewAccountRepository.uploadDocument({
+      fileName: dto.fileName,
+      base64: dto.base64,
+      documentType: dto.documentType,
+    });
+
+    if (!response.result.success) {
+      throw new BadRequestException(
+        response.result.errorMessage ?? response.message,
+      );
+    }
+
+    return {
+      message: response.message,
+      data: {
+        documentId: response.result.documentId,
+        azureUrl: response.result.azureUrl,
+      },
     };
   }
 
