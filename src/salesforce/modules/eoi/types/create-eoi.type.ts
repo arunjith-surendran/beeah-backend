@@ -38,6 +38,13 @@ export interface CreateEoiApexPayload {
   representativeEmail?: string;
   representativeCountryCode?: string;
   representativeMobileNo?: number;
+  nationality?: string;
+  passportNo?: string;
+  passportExpiry?: string;
+  eidNo?: string;
+  eidExpiry?: string;
+  postalCode?: string;
+  vatCertificateNo?: string;
   unitPreferences: UnitPreferencePayload[];
 }
 

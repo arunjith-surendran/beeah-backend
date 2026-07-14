@@ -184,6 +184,13 @@ export class EoiService {
       representativeEmail: dto.representativeEmail,
       representativeCountryCode: dto.representativeCountryCode,
       representativeMobileNo: dto.representativeMobileNo,
+      nationality: dto.nationality,
+      passportNo: dto.passportNo,
+      passportExpiry: dto.passportExpiry,
+      eidNo: dto.eidNo,
+      eidExpiry: dto.eidExpiry,
+      postalCode: dto.postalCode,
+      vatCertificateNo: dto.vatCertificateNo,
       unitPreferences: dto.unitPreferences.map((preference) => ({
         unitType: preference.unitType,
         noOfUnits: preference.noOfUnits,

@@ -126,6 +126,34 @@ export class CreateEoiDto {
   @IsNumber()
   representativeMobileNo?: number;
 
+  @IsOptional()
+  @IsString()
+  nationality?: string;
+
+  @IsOptional()
+  @IsString()
+  passportNo?: string;
+
+  @IsOptional()
+  @IsString()
+  passportExpiry?: string;
+
+  @IsOptional()
+  @IsString()
+  eidNo?: string;
+
+  @IsOptional()
+  @IsString()
+  eidExpiry?: string;
+
+  @IsOptional()
+  @IsString()
+  postalCode?: string;
+
+  @IsOptional()
+  @IsString()
+  vatCertificateNo?: string;
+
   @IsArray()
   @ArrayMinSize(1)
   @ValidateNested({ each: true })
