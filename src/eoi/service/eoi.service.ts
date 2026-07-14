@@ -25,6 +25,7 @@ import {
   required,
   unauthorizedException,
 } from '../../common/utils/validators.util';
+import { BadRequestException } from '../../common/utils/http-errors.util';
 import { SalesforceClient } from '../../salesforce/network/salesforce.client';
 
 @Injectable()
@@ -52,6 +53,11 @@ export class EoiService {
     const response = await this.eoiRepository.createEoi(
       this.toApexPayload(dto, userId),
     );
+
+    if (response.errorDetails) {
+      throw new BadRequestException(response.errorDetails);
+    }
+    required(response.recordId, 'recordId');
 
     return {
       message: response.message,
@@ -267,6 +273,10 @@ export class EoiService {
     const response = await this.eoiRepository.createModeOfPayment(
       this.toModeOfPaymentApexPayload(eoiId, dto),
     );
+
+    if (response.errorDetails) {
+      throw new BadRequestException(response.errorDetails);
+    }
 
     return {
       message: response.message,
