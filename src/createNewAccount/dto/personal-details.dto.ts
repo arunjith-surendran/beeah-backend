@@ -1,8 +1,8 @@
 import {
   IsEmail,
   IsEnum,
+  IsNotEmpty,
   IsOptional,
-  IsPhoneNumber,
   IsString,
 } from 'class-validator';
 import { AgencySubType } from './agency-sub-type.enum';
@@ -38,7 +38,10 @@ export class PersonalDetailsDto {
   @IsString()
   countryCode: string;
 
-  @IsPhoneNumber()
+  // countryCode carries the dial code separately (e.g. "India: 91"), so mobile is
+  // just the local number - not a full E.164 number IsPhoneNumber would require.
+  @IsString()
+  @IsNotEmpty()
   mobile: string;
 
   @IsEmail()
