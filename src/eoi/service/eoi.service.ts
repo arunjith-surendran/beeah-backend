@@ -34,7 +34,7 @@ export class EoiService {
    * Builds the Salesforce `createEOI` payload from the client DTO and submits it.
    *
    * @param user - Authenticated user.
-   * @param dto - New EOI's details, including buyer/company/representative info and unit preferences.
+   * @param dto - New EOI's details, including buyer info and unit preferences.
    * @returns The created record/lead/account ids wrapped in a `{ message, data }` envelope.
    */
   async createEoi(
@@ -43,9 +43,8 @@ export class EoiService {
   ): Promise<ResultWithMessage<CreateEoiResultDto>> {
     unauthorizedException(!!user, 'Unauthorized');
 
-    const userId = await this.salesforceClient.getUserId();
     const response = await this.eoiRepository.createEoi(
-      this.toApexPayload(dto, userId),
+      this.toApexPayload(dto),
     );
 
     return {
@@ -143,59 +142,33 @@ export class EoiService {
    * Maps the client DTO into the shape expected by the Salesforce `createEOI` Apex REST endpoint.
    *
    * @param dto - New EOI's details submitted by the client.
-   * @param userId - Salesforce user id our client-credentials grant authenticates as.
    * @returns The Salesforce-shaped payload.
    */
-  private toApexPayload(
-    dto: CreateEoiDto,
-    userId: string,
-  ): CreateEoiApexPayload {
+  private toApexPayload(dto: CreateEoiDto): CreateEoiApexPayload {
     return {
-      booking_Type: dto.bookingType,
-      projectId: dto.projectId,
-      buyer_Type: dto.buyerType,
-      property_Type: dto.propertyType,
-      userId,
-      createdByPortalUser: dto.createdByPortalUser,
-      leadId: dto.leadId,
-      salutation: dto.salutation,
-      FirstName: dto.firstName,
-      LastName: dto.lastName,
-      email: dto.email,
+      Project_Id: dto.projectId,
       countryCode: dto.countryCode,
-      mobileNo: dto.mobileNo,
-      countryOfResidence: dto.countryOfResidence,
-      address: dto.address,
-      city: dto.city,
-      companyName: dto.companyName,
-      companyRegistrationPlace: dto.companyRegistrationPlace,
-      companyRegistrationDate: dto.companyRegistrationDate,
-      tradeLicenseNo: dto.tradeLicenseNo,
-      tradeLicenseExpiryDate: dto.tradeLicenseExpiryDate,
-      tradeLicenseIssueDate: dto.tradeLicenseIssueDate,
-      companyEmail: dto.companyEmail,
-      corpAddress: dto.corpAddress,
-      corpCountry: dto.corpCountry,
-      corpCity: dto.corpCity,
-      corpPostalCode: dto.corpPostalCode,
-      representativeSalutation: dto.representativeSalutation,
-      representativeFirstName: dto.representativeFirstName,
-      representativeLastName: dto.representativeLastName,
-      representativeEmail: dto.representativeEmail,
-      representativeCountryCode: dto.representativeCountryCode,
-      representativeMobileNo: dto.representativeMobileNo,
-      nationality: dto.nationality,
-      passportNo: dto.passportNo,
-      passportExpiry: dto.passportExpiry,
-      eidNo: dto.eidNo,
-      eidExpiry: dto.eidExpiry,
-      postalCode: dto.postalCode,
-      vatCertificateNo: dto.vatCertificateNo,
-      unitPreferences: dto.unitPreferences.map((preference) => ({
-        unitType: preference.unitType,
+      countryOfResident: dto.countryOfResident,
+      email: dto.email,
+      firstName: dto.firstName,
+      middleName: dto.middleName,
+      lastName: dto.lastName,
+      mobilePhone: dto.mobilePhone,
+      leadSource: dto.leadSource,
+      recordTypeDeveloperName: dto.recordTypeDeveloperName,
+      preferences: dto.preferences.map((preference) => ({
+        unitPrefernce: preference.unitPrefernce,
         noOfUnits: preference.noOfUnits,
         eoiAmount: preference.eoiAmount,
       })),
+      city: dto.city,
+      country: dto.country,
+      nationality: dto.nationality,
+      passportExpiry: dto.passportExpiry,
+      eidNo: dto.eidNo,
+      emiratesExpiry: dto.emiratesExpiry,
+      firstApplicantAddress: dto.firstApplicantAddress,
+      postalCode: dto.postalCode,
     };
   }
 

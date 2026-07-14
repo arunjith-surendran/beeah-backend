@@ -1,51 +1,29 @@
 export interface UnitPreferencePayload {
-  unitType: string;
+  unitPrefernce: string;
   noOfUnits: number;
   eoiAmount: number;
 }
 
 export interface CreateEoiApexPayload {
-  booking_Type: string;
-  projectId: string;
-  buyer_Type: string;
-  property_Type: string;
-  userId: string;
-  createdByPortalUser: boolean;
-  leadId?: string;
-  salutation: string;
-  FirstName: string;
-  LastName: string;
-  email: string;
+  Project_Id: string;
   countryCode: string;
-  mobileNo: number;
-  countryOfResidence: string;
-  address: string;
-  city: string;
-  companyName?: string;
-  companyRegistrationPlace?: string;
-  companyRegistrationDate?: string;
-  tradeLicenseNo?: string;
-  tradeLicenseExpiryDate?: string;
-  tradeLicenseIssueDate?: string;
-  companyEmail?: string;
-  corpAddress?: string;
-  corpCountry?: string;
-  corpCity?: string;
-  corpPostalCode?: string;
-  representativeSalutation?: string;
-  representativeFirstName?: string;
-  representativeLastName?: string;
-  representativeEmail?: string;
-  representativeCountryCode?: string;
-  representativeMobileNo?: number;
+  countryOfResident?: string;
+  email: string;
+  firstName: string;
+  middleName?: string;
+  lastName?: string;
+  mobilePhone: string;
+  leadSource?: string;
+  recordTypeDeveloperName: string;
+  preferences: UnitPreferencePayload[];
+  city?: string;
+  country?: string;
   nationality?: string;
-  passportNo?: string;
   passportExpiry?: string;
   eidNo?: string;
-  eidExpiry?: string;
+  emiratesExpiry?: string;
+  firstApplicantAddress?: string;
   postalCode?: string;
-  vatCertificateNo?: string;
-  unitPreferences: UnitPreferencePayload[];
 }
 
 export interface CreateEoiApexResponse {
