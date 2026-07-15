@@ -16,8 +16,8 @@ import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-re
 import { EoiDetailDto } from '../dto/get-eois.dto';
 import { CreateModeOfPaymentDto } from '../dto/create-mode-of-payment.dto';
 import { CreateModeOfPaymentResultDto } from '../dto/create-mode-of-payment-result.dto';
-import { SubmitEoiDto } from '../dto/submit-eoi.dto';
-import { SubmitEoiResultDto } from '../dto/submit-eoi-result.dto';
+import { CreateEoiDto } from '../dto/create-eoi.dto';
+import { CreateEoiResultDto } from '../dto/create-eoi-result.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('eoi')
@@ -25,15 +25,18 @@ export class EoiController {
   constructor(private readonly eoiService: EoiService) {}
 
   /**
-   * Creates an EOI, uploads EOI/payment documents against the created EOI id,
-   * and records mode-of-payment details in one app-facing request.
+   * Creates a new EOI, including buyer/company/representative info and unit preferences.
+   *
+   * @param user - Authenticated user attached by `JwtAuthGuard`.
+   * @param dto - New EOI's details.
+   * @returns The created record/lead/account ids wrapped in a `{ message, data }` envelope.
    */
-  @Post('submit')
-  submitEoi(
+  @Post('create-eoi')
+  createEoi(
     @CurrentUser() user: User,
-    @Body() dto: SubmitEoiDto,
-  ): Promise<ResultWithMessage<SubmitEoiResultDto>> {
-    return this.eoiService.submitEoi(user, dto);
+    @Body() dto: CreateEoiDto,
+  ): Promise<ResultWithMessage<CreateEoiResultDto>> {
+    return this.eoiService.createEoi(user, dto);
   }
 
   /**

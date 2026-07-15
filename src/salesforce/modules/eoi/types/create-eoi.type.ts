@@ -29,6 +29,20 @@ export interface CreateEoiApexPayload {
   emiratesExpiry?: string;
   firstApplicantAddress?: string;
   postalCode?: string;
+
+  // Company buyer fields (present when buyer_Type is "Company")
+  Company_Name?: string;
+  Company_Registration_Place?: string;
+  Company_Registration_Date?: string;
+  Trade_License_Number?: string;
+  Trade_License_Expiry_Date?: string;
+  Mobile_Country_Code?: string;
+  Company_Email?: string;
+  VAT_Certificate_No?: string;
+  Representative_First_Name?: string;
+  Signatory_Mobile?: string;
+  Signatory_Mobile_Country_Code?: string;
+  Signatory_Email?: string;
 }
 
 export interface CreateEoiApexResponse {

@@ -1,8 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { Injectable } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { EoiRepository } from '../repository/eoi.repository';
@@ -15,10 +11,6 @@ import { CreateModeOfPaymentApexPayload } from '../../salesforce/modules/eoi/typ
 import { CreateModeOfPaymentDto } from '../dto/create-mode-of-payment.dto';
 import { CreateModeOfPaymentResultDto } from '../dto/create-mode-of-payment-result.dto';
 import { ModeOfPaymentDto } from '../dto/mode-of-payment.dto';
-import { SubmitEoiDto } from '../dto/submit-eoi.dto';
-import { SubmitEoiResultDto } from '../dto/submit-eoi-result.dto';
-import { DocumentService } from '../../document/service/document.service';
-import { UploadDocumentResultDto } from '../../document/dto/upload-document-result.dto';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-result-with-message.interface';
 import { paginate } from '../../common/utils/paginate.util';
@@ -34,7 +26,6 @@ export class EoiService {
   constructor(
     private readonly eoiRepository: EoiRepository,
     private readonly salesforceClient: SalesforceClient,
-    private readonly documentService: DocumentService,
   ) {}
 
   /**
@@ -66,46 +57,6 @@ export class EoiService {
         recordId: response.recordId,
         leadId: response.leadId,
         accountId: response.AccountId,
-      },
-    };
-  }
-
-  /**
-   * Creates an EOI and then attaches all selected documents to the returned EOI
-   * record id before recording mode-of-payment details.
-   */
-  async submitEoi(
-    user: User,
-    dto: SubmitEoiDto,
-  ): Promise<ResultWithMessage<SubmitEoiResultDto>> {
-    const createdEoi = await this.createEoi(user, dto.eoiInfo);
-    const recordId = createdEoi.data.recordId;
-    const documents: UploadDocumentResultDto[] = [];
-
-    for (const document of dto.documents ?? []) {
-      const uploaded = await this.documentService.uploadDocument(user, {
-        fileName: document.fileName,
-        base64: document.base64,
-        recordId,
-        documentType: document.documentType,
-      });
-      documents.push(uploaded.data);
-    }
-
-    let modeOfPayment: CreateModeOfPaymentResultDto | null = null;
-    if (dto.modeOfPayments?.length) {
-      const payment = await this.createModeOfPayment(user, recordId, {
-        modeOfPayments: dto.modeOfPayments,
-      });
-      modeOfPayment = payment.data;
-    }
-
-    return {
-      message: 'EOI submitted successfully',
-      data: {
-        eoi: createdEoi.data,
-        documents,
-        modeOfPayment,
       },
     };
   }
@@ -234,6 +185,34 @@ export class EoiService {
         firstApplicantAddress: dto.firstApplicantAddress,
       }),
       ...(dto.postalCode && { postalCode: dto.postalCode }),
+      ...(dto.companyName && { Company_Name: dto.companyName }),
+      ...(dto.companyRegistrationPlace && {
+        Company_Registration_Place: dto.companyRegistrationPlace,
+      }),
+      ...(dto.companyRegistrationDate && {
+        Company_Registration_Date: dto.companyRegistrationDate,
+      }),
+      ...(dto.tradeLicenseNumber && {
+        Trade_License_Number: dto.tradeLicenseNumber,
+      }),
+      ...(dto.tradeLicenseExpiryDate && {
+        Trade_License_Expiry_Date: dto.tradeLicenseExpiryDate,
+      }),
+      ...(dto.mobileCountryCode && {
+        Mobile_Country_Code: dto.mobileCountryCode,
+      }),
+      ...(dto.companyEmail && { Company_Email: dto.companyEmail }),
+      ...(dto.vatCertificateNo && {
+        VAT_Certificate_No: dto.vatCertificateNo,
+      }),
+      ...(dto.representativeFirstName && {
+        Representative_First_Name: dto.representativeFirstName,
+      }),
+      ...(dto.signatoryMobile && { Signatory_Mobile: dto.signatoryMobile }),
+      ...(dto.signatoryMobileCountryCode && {
+        Signatory_Mobile_Country_Code: dto.signatoryMobileCountryCode,
+      }),
+      ...(dto.signatoryEmail && { Signatory_Email: dto.signatoryEmail }),
     };
   }
 

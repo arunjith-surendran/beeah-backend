@@ -135,7 +135,7 @@ export const NATIONALITY_LIST: readonly string[] = [
   'Tunisian',
   'Turkish',
   'Turkmenistani',
-  'United Arab Emirates',
+  'UAE',
   'Ugandan',
   'Ukrainian',
   'United Kingdom',

@@ -89,4 +89,53 @@ export class CreateEoiDto {
   @IsOptional()
   @IsString()
   postalCode?: string;
+
+  // Company buyer fields (present when buyerType is "Company")
+  @IsOptional()
+  @IsString()
+  companyName?: string;
+
+  @IsOptional()
+  @IsString()
+  companyRegistrationPlace?: string;
+
+  @IsOptional()
+  @IsString()
+  companyRegistrationDate?: string;
+
+  @IsOptional()
+  @IsString()
+  tradeLicenseNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  tradeLicenseExpiryDate?: string;
+
+  @IsOptional()
+  @IsString()
+  mobileCountryCode?: string;
+
+  @IsOptional()
+  @IsEmail()
+  companyEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  vatCertificateNo?: string;
+
+  @IsOptional()
+  @IsString()
+  representativeFirstName?: string;
+
+  @IsOptional()
+  @IsString()
+  signatoryMobile?: string;
+
+  @IsOptional()
+  @IsString()
+  signatoryMobileCountryCode?: string;
+
+  @IsOptional()
+  @IsEmail()
+  signatoryEmail?: string;
 }
