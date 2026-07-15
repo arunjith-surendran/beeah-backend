@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
@@ -40,7 +41,7 @@ export class EoiService {
    * Builds the Salesforce `createEOI` payload from the client DTO and submits it.
    *
    * @param user - Authenticated user.
-   * @param dto - New EOI's details, including buyer/company/representative info and unit preferences.
+   * @param dto - New EOI's details, including buyer info and unit preferences.
    * @returns The created record/lead/account ids wrapped in a `{ message, data }` envelope.
    */
   async createEoi(
@@ -192,8 +193,10 @@ export class EoiService {
 
   /**
    * Maps the client DTO into the shape expected by the Salesforce `createEOI` Apex REST endpoint.
+   * Only includes fields actually present in the payload.
    *
    * @param dto - New EOI's details submitted by the client.
+   * @param userId - Salesforce user id from client-credentials flow.
    * @returns The Salesforce-shaped payload.
    */
   private toApexPayload(
@@ -201,55 +204,36 @@ export class EoiService {
     userId: string,
   ): CreateEoiApexPayload {
     return {
-      booking_Type: dto.bookingType,
       projectId: dto.projectId,
       buyer_Type: dto.buyerType,
-      property_Type: dto.propertyType,
-      userId,
-      createdByPortalUser: dto.createdByPortalUser,
-      leadId: dto.leadId,
-      salutation: dto.salutation,
       FirstName: dto.firstName,
-      middleName: dto.middleName,
       LastName: dto.lastName,
       email: dto.email,
       countryCode: dto.countryCode,
       mobileNo: dto.mobileNo,
       countryOfResidence: dto.countryOfResidence,
-      country: dto.country,
-      address: dto.address,
-      firstApplicantAddress: dto.firstApplicantAddress,
       city: dto.city,
-      leadSource: dto.leadSource,
-      recordTypeDeveloperName: dto.recordTypeDeveloperName,
-      companyName: dto.companyName,
-      companyRegistrationPlace: dto.companyRegistrationPlace,
-      companyRegistrationDate: dto.companyRegistrationDate,
-      tradeLicenseNo: dto.tradeLicenseNo,
-      tradeLicenseExpiryDate: dto.tradeLicenseExpiryDate,
-      tradeLicenseIssueDate: dto.tradeLicenseIssueDate,
-      companyEmail: dto.companyEmail,
-      corpAddress: dto.corpAddress,
-      corpCountry: dto.corpCountry,
-      corpCity: dto.corpCity,
-      corpPostalCode: dto.corpPostalCode,
-      representativeSalutation: dto.representativeSalutation,
-      representativeFirstName: dto.representativeFirstName,
-      representativeLastName: dto.representativeLastName,
-      representativeEmail: dto.representativeEmail,
-      representativeCountryCode: dto.representativeCountryCode,
-      representativeMobileNo: dto.representativeMobileNo,
-      nationality: dto.nationality,
-      passportExpiry: dto.passportExpiry,
-      eidNo: dto.eidNo,
-      emiratesExpiry: dto.emiratesExpiry,
-      postalCode: dto.postalCode,
-      vatCertificateNo: dto.vatCertificateNo,
+      createdByPortalUser: dto.createdByPortalUser,
       unitPreferences: dto.unitPreferences.map((preference) => ({
         unitType: preference.unitType,
         noOfUnits: preference.noOfUnits,
         eoiAmount: preference.eoiAmount,
       })),
+      // Optional fields - include only if provided
+      ...(dto.middleName && { middleName: dto.middleName }),
+      ...(dto.country && { country: dto.country }),
+      ...(dto.leadSource && { leadSource: dto.leadSource }),
+      ...(dto.recordTypeDeveloperName && {
+        recordTypeDeveloperName: dto.recordTypeDeveloperName,
+      }),
+      ...(dto.nationality && { nationality: dto.nationality }),
+      ...(dto.passportExpiry && { passportExpiry: dto.passportExpiry }),
+      ...(dto.eidNo && { eidNo: dto.eidNo }),
+      ...(dto.emiratesExpiry && { emiratesExpiry: dto.emiratesExpiry }),
+      ...(dto.firstApplicantAddress && {
+        firstApplicantAddress: dto.firstApplicantAddress,
+      }),
+      ...(dto.postalCode && { postalCode: dto.postalCode }),
     };
   }
 

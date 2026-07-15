@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import {
   Body,
   Controller,
@@ -15,8 +13,6 @@ import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { EoiService } from '../service/eoi.service';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-result-with-message.interface';
-import { CreateEoiDto } from '../dto/create-eoi.dto';
-import { CreateEoiResultDto } from '../dto/create-eoi-result.dto';
 import { EoiDetailDto } from '../dto/get-eois.dto';
 import { CreateModeOfPaymentDto } from '../dto/create-mode-of-payment.dto';
 import { CreateModeOfPaymentResultDto } from '../dto/create-mode-of-payment-result.dto';
@@ -27,21 +23,6 @@ import { SubmitEoiResultDto } from '../dto/submit-eoi-result.dto';
 @Controller('eoi')
 export class EoiController {
   constructor(private readonly eoiService: EoiService) {}
-
-  /**
-   * Creates a new EOI, including buyer/company/representative info and unit preferences.
-   *
-   * @param user - Authenticated user attached by `JwtAuthGuard`.
-   * @param dto - New EOI's details.
-   * @returns The created record/lead/account ids wrapped in a `{ message, data }` envelope.
-   */
-  @Post('create-eoi')
-  createEoi(
-    @CurrentUser() user: User,
-    @Body() dto: CreateEoiDto,
-  ): Promise<ResultWithMessage<CreateEoiResultDto>> {
-    return this.eoiService.createEoi(user, dto);
-  }
 
   /**
    * Creates an EOI, uploads EOI/payment documents against the created EOI id,

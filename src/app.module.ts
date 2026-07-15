@@ -19,6 +19,8 @@ import { PaymentPlanModule } from './paymentPlan/payment-plan.module';
 import { SalesOfferModule } from './salesOffer/sales-offer.module';
 import { DocumentModule } from './document/document.module';
 import { HealthModule } from './health/health.module';
+import { NationalityModule } from './nationality/nationality.module';
+import { CountryModule } from './country/country.module';
 
 @Module({
   imports: [
@@ -44,6 +46,8 @@ import { HealthModule } from './health/health.module';
     SalesOfferModule,
     DocumentModule,
     HealthModule,
+    NationalityModule,
+    CountryModule,
   ],
   controllers: [AppController],
   providers: [

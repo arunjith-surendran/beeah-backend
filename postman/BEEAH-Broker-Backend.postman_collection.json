@@ -298,10 +298,46 @@
       ]
     },
     {
+      "name": "Nationality",
+      "item": [
+        {
+          "name": "Get Nationalities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/nationalities",
+            "description": "Fetches the fixed nationality list (label/value pairs, value is the demonym e.g. \"Indian\") for populating a select input. Matches Salesforce's Nationality__c restricted picklist exactly. Public endpoint (no auth) - needed on the onboarding form before the user is logged in.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Country",
+      "item": [
+        {
+          "name": "Get Countries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/countries",
+            "description": "Fetches the fixed country list (label/value pairs, both the country name e.g. \"Austria\") for populating a select input. Matches Salesforce's Country/CountryOfResidence restricted picklist exactly. Public endpoint (no auth) - needed on the onboarding form before the user is logged in.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "EOI",
       "item": [
         {
-          "name": "Create EOI - Individual (UAE)",
+          "name": "Submit EOI",
           "request": {
             "method": "POST",
             "header": [
@@ -310,59 +346,11 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{baseUrl}}/eoi/create-eoi",
-            "description": "Creates a new EOI for a UAE-resident individual buyer. eidNo/emiratesExpiry are the Emirates ID fields used for UAE residents.",
+            "url": "{{baseUrl}}/eoi/submit",
+            "description": "Single combined endpoint: creates the EOI, uploads the given documents against the returned EOI record id, then records mode-of-payment entries - all in one call. eoiInfo accepts any buyerType (\"Individual\" or \"Company\") - all fields beyond projectId/buyerType/firstName/lastName/email/countryCode/mobileNo/countryOfResidence/city/unitPreferences are optional and defaulted server-side when omitted (bookingType -> 'Broker Sale', propertyType/salutation -> '', createdByPortalUser -> true, address -> firstApplicantAddress -> ''; country/countryOfResidence/nationality default to 'United Arab Emirates' for Company). documents and modeOfPayments are both optional.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"countryCode\": \"United Arab Emirates: 971\",\n  \"countryOfResident\": \"United Arab Emirates\",\n  \"email\": \"ahmed.khan@example.com\",\n  \"firstName\": \"Ahmed\",\n  \"middleName\": \"\",\n  \"lastName\": \"Khan\",\n  \"mobilePhone\": \"501234567\",\n  \"leadSource\": \"Broker\",\n  \"recordTypeDeveloperName\": \"Individual\",\n  \"preferences\": [\n    {\n      \"unitPrefernce\": \"1 Bedroom\",\n      \"noOfUnits\": 1,\n      \"eoiAmount\": 12000\n    }\n  ],\n  \"city\": \"\",\n  \"country\": \"United Arab Emirates\",\n  \"nationality\": \"India\",\n  \"passportExpiry\": \"2030-01-01\",\n  \"eidNo\": \"784199012345671\",\n  \"emiratesExpiry\": \"2030-01-01\",\n  \"firstApplicantAddress\": \"123 Sample Street, Downtown\",\n  \"postalCode\": \"12345\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create EOI - Individual (Non-UAE)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": "{{baseUrl}}/eoi/create-eoi",
-            "description": "Same shape as the UAE individual - for a non-UAE resident, eidNo holds the passport number instead and emiratesExpiry is left blank.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"countryCode\": \"United Arab Emirates: 971\",\n  \"countryOfResident\": \"United Arab Emirates\",\n  \"email\": \"ahmed.khan@example.com\",\n  \"firstName\": \"Ahmed\",\n  \"middleName\": \"\",\n  \"lastName\": \"Khan\",\n  \"mobilePhone\": \"501234567\",\n  \"leadSource\": \"Broker\",\n  \"recordTypeDeveloperName\": \"Individual\",\n  \"preferences\": [\n    {\n      \"unitPrefernce\": \"1 Bedroom\",\n      \"noOfUnits\": 1,\n      \"eoiAmount\": 12000\n    }\n  ],\n  \"city\": \"\",\n  \"country\": \"United Arab Emirates\",\n  \"nationality\": \"India\",\n  \"passportExpiry\": \"2030-01-01\",\n  \"eidNo\": \"X1234567\",\n  \"emiratesExpiry\": \"\",\n  \"firstApplicantAddress\": \"123 Sample Street, Downtown\",\n  \"postalCode\": \"12345\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Create EOI - Company",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": "{{baseUrl}}/eoi/create-eoi",
-            "description": "Creates a new EOI for a company buyer. No separate company/trade-license/representative fields exist in this contract - the signatory's full name goes in firstName with lastName left empty, and individual-only fields (nationality, passport, EID, address, postal code, country) are sent blank.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"projectId\": \"{{projectId}}\",\n  \"countryCode\": \"United Arab Emirates: 971\",\n  \"countryOfResident\": \"\",\n  \"email\": \"info@alnoorrealestate.ae\",\n  \"firstName\": \"Ahmed Al Mansoori\",\n  \"middleName\": \"\",\n  \"lastName\": \"\",\n  \"mobilePhone\": \"501234567\",\n  \"leadSource\": \"Broker\",\n  \"recordTypeDeveloperName\": \"Company\",\n  \"preferences\": [\n    {\n      \"unitPrefernce\": \"1 Bedroom\",\n      \"noOfUnits\": 1,\n      \"eoiAmount\": 12000\n    }\n  ],\n  \"city\": \"\",\n  \"country\": \"\",\n  \"nationality\": \"\",\n  \"passportExpiry\": \"\",\n  \"eidNo\": \"\",\n  \"emiratesExpiry\": \"\",\n  \"firstApplicantAddress\": \"\",\n  \"postalCode\": \"\"\n}",
+              "raw": "{\n  \"eoiInfo\": {\n    \"projectId\": \"{{projectId}}\",\n    \"buyerType\": \"Company\",\n    \"firstName\": \"Ahmed\",\n    \"middleName\": \"Ali\",\n    \"lastName\": \"AlMansoori\",\n    \"email\": \"ahmed.mansoori@testcorp.com\",\n    \"countryCode\": \"United Arab Emirates: 971\",\n    \"mobileNo\": 501112233,\n    \"countryOfResidence\": \"United Arab Emirates\",\n    \"country\": \"United Arab Emirates\",\n    \"city\": \"Dubai\",\n    \"leadSource\": \"Broker\",\n    \"recordTypeDeveloperName\": \"Company\",\n    \"nationality\": \"United Arab Emirates\",\n    \"passportExpiry\": \"2030-12-31\",\n    \"eidNo\": \"784199012345671\",\n    \"emiratesExpiry\": \"2030-12-31\",\n    \"firstApplicantAddress\": \"Office 301, Business Bay Tower, Dubai\",\n    \"postalCode\": \"00000\",\n    \"createdByPortalUser\": true,\n    \"unitPreferences\": [\n      {\n        \"unitType\": \"studio\",\n        \"noOfUnits\": 1,\n        \"eoiAmount\": 15000\n      }\n    ]\n  },\n  \"documents\": [\n    {\n      \"fileName\": \"national-id.jpg\",\n      \"base64\": \"/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=\",\n      \"documentType\": \"National Id\"\n    },\n    {\n      \"fileName\": \"pop-document.jpg\",\n      \"base64\": \"/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgICAgMCAgIDAwMDBAYEBAQEBAgGBgUGCQgKCgkICQkKDA8MCgsOCwkJDRENDg8QEBEQCgwSExIQEw8QEBD/2wBDAQMDAwQDBAgEBAgQCwkLEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBD/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAj/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=\",\n      \"documentType\": \"POP Document\"\n    }\n  ],\n  \"modeOfPayments\": [\n    {\n      \"paymentMode\": \"Cash\",\n      \"currencyType\": \"AED\",\n      \"depositAmount\": 15000,\n      \"bankName\": null,\n      \"transactionDate\": \"2026-07-14\",\n      \"transactionNo\": \"TXN-0001\",\n      \"chequeNumber\": null,\n      \"chequeDate\": null,\n      \"thirdPartyCheque\": \"No\"\n    }\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"

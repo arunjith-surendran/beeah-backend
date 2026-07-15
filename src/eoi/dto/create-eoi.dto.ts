@@ -12,9 +12,7 @@ import {
 import { UnitPreferenceDto } from './unit-preference.dto';
 
 export class CreateEoiDto {
-  @IsString()
-  bookingType: string;
-
+  // Required fields (present in JSON payload)
   @IsString()
   projectId: string;
 
@@ -22,24 +20,7 @@ export class CreateEoiDto {
   buyerType: string;
 
   @IsString()
-  propertyType: string;
-
-  @IsBoolean()
-  createdByPortalUser: boolean;
-
-  @IsOptional()
-  @IsString()
-  leadId?: string;
-
-  @IsString()
-  salutation: string;
-
-  @IsString()
   firstName: string;
-
-  @IsOptional()
-  @IsString()
-  middleName?: string;
 
   @IsString()
   lastName: string;
@@ -56,19 +37,26 @@ export class CreateEoiDto {
   @IsString()
   countryOfResidence: string;
 
+  @IsString()
+  city: string;
+
+  @IsBoolean()
+  createdByPortalUser: boolean;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => UnitPreferenceDto)
+  unitPreferences: UnitPreferenceDto[];
+
+  // Optional fields (present in JSON payload)
+  @IsOptional()
+  @IsString()
+  middleName?: string;
+
   @IsOptional()
   @IsString()
   country?: string;
-
-  @IsString()
-  address: string;
-
-  @IsOptional()
-  @IsString()
-  firstApplicantAddress?: string;
-
-  @IsString()
-  city: string;
 
   @IsOptional()
   @IsString()
@@ -80,82 +68,12 @@ export class CreateEoiDto {
 
   @IsOptional()
   @IsString()
-  companyName?: string;
-
-  @IsOptional()
-  @IsString()
-  companyRegistrationPlace?: string;
-
-  @IsOptional()
-  @IsString()
-  companyRegistrationDate?: string;
-
-  @IsOptional()
-  @IsString()
-  tradeLicenseNo?: string;
-
-  @IsOptional()
-  @IsString()
-  tradeLicenseExpiryDate?: string;
-
-  @IsOptional()
-  @IsString()
-  tradeLicenseIssueDate?: string;
-
-  @IsOptional()
-  @IsEmail()
-  companyEmail?: string;
-
-  @IsOptional()
-  @IsString()
-  corpAddress?: string;
-
-  @IsOptional()
-  @IsString()
-  corpCountry?: string;
-
-  @IsOptional()
-  @IsString()
-  corpCity?: string;
-
-  @IsOptional()
-  @IsString()
-  corpPostalCode?: string;
-
-  @IsOptional()
-  @IsString()
-  representativeSalutation?: string;
-
-  @IsOptional()
-  @IsString()
-  representativeFirstName?: string;
-
-  @IsOptional()
-  @IsString()
-  representativeLastName?: string;
-
-  @IsOptional()
-  @IsEmail()
-  representativeEmail?: string;
-
-  @IsOptional()
-  @IsString()
-  representativeCountryCode?: string;
-
-  @IsOptional()
-  @IsNumber()
-  representativeMobileNo?: number;
-
-  @IsOptional()
-  @IsString()
   nationality?: string;
 
   @IsOptional()
   @IsString()
   passportExpiry?: string;
 
-  // Emirates ID for UAE residents, passport number for non-UAE residents -
-  // one field serves both, matching the frontend's National_ID_Number field.
   @IsOptional()
   @IsString()
   eidNo?: string;
@@ -166,15 +84,9 @@ export class CreateEoiDto {
 
   @IsOptional()
   @IsString()
-  postalCode?: string;
+  firstApplicantAddress?: string;
 
   @IsOptional()
   @IsString()
-  vatCertificateNo?: string;
-
-  @IsArray()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => UnitPreferenceDto)
-  unitPreferences: UnitPreferenceDto[];
+  postalCode?: string;
 }
