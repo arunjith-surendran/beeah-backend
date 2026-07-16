@@ -36,14 +36,34 @@ export class EoiPaymentService {
   ) {}
 
   /**
-   * Creates an N-Genius hosted-payment-page order for an EOI's deposit amount.
+   * Creates an N-Genius order for an EOI's deposit amount. Idempotent on
+   * `dto.idempotencyKey`: replaying the same key returns the order already
+   * created for it instead of creating a second one, so a double-tap or
+   * network retry can't double-charge.
    *
-   * @param dto - Target EOI id, amount (major currency units), and optional currency.
-   * @returns The hosted payment page URL and order reference, wrapped in a `{ message, data }` envelope.
+   * @param dto - Target EOI id, amount (major currency units), idempotency key, and optional currency.
+   * @returns The order reference, raw gateway response (for a native SDK), and hosted-page URL (if any), wrapped in a `{ message, data }` envelope.
    */
   async createOrder(
     dto: CreateEoiPaymentOrderDto,
   ): Promise<ResultWithMessage<GatewayOrderResultDto>> {
+    const existing = await this.eoiCardPaymentRepository.findByIdempotencyKey(
+      dto.idempotencyKey,
+    );
+    if (existing) {
+      return {
+        message: 'Payment order created',
+        data: {
+          paymentUrl: this.paymentGatewayService.extractPaymentUrl(
+            existing.gatewayResponse,
+          ),
+          orderReference: existing.orderReference,
+          merchantOrderReference: existing.merchantOrderReference,
+          gatewayResponse: existing.gatewayResponse,
+        },
+      };
+    }
+
     const order = await this.paymentGatewayService.createOrder({
       merchantReferenceTag: MERCHANT_REFERENCE_TAG,
       entityId: dto.eoiId,
@@ -58,6 +78,7 @@ export class EoiPaymentService {
       status: 'CREATED',
       orderReference: order.orderReference,
       merchantOrderReference: order.merchantOrderReference,
+      idempotencyKey: dto.idempotencyKey,
       gatewayResponse: order.gatewayResponse,
     });
 
@@ -66,6 +87,8 @@ export class EoiPaymentService {
       data: {
         paymentUrl: order.paymentUrl,
         orderReference: order.orderReference,
+        merchantOrderReference: order.merchantOrderReference,
+        gatewayResponse: order.gatewayResponse,
       },
     };
   }

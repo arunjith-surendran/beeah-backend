@@ -29,6 +29,16 @@ export class EoiCardPaymentRepository {
   }
 
   /**
+   * Passes through to Prisma to find an EOI card payment by its caller-supplied idempotency key.
+   *
+   * @param idempotencyKey - Idempotency key supplied on order creation.
+   * @returns The matching row, or `null` if none exists.
+   */
+  findByIdempotencyKey(idempotencyKey: string): Promise<EoiCardPayment | null> {
+    return this.prisma.eoiCardPayment.findUnique({ where: { idempotencyKey } });
+  }
+
+  /**
    * Passes through to Prisma to update an EOI card payment by its N-Genius
    * order reference - used to sync the latest gateway state on each status
    * poll and, once recorded in Salesforce, to stamp the outcome.

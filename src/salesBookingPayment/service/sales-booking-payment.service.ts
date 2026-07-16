@@ -53,27 +53,52 @@ export class SalesBookingPaymentService {
 
   /**
    * Creates an N-Genius hosted-payment-page order for a sales booking's token amount.
+   * Idempotent on `dto.idempotencyKey`: replaying the same key returns the
+   * order already created for it instead of creating a second one, so a
+   * double-tap or network retry can't double-charge.
    *
-   * @param dto - Target booking id, amount (major currency units), and optional currency.
+   * @param dto - Amount (major currency units), idempotency key, and optional currency.
    * @returns The full N-Genius order-creation response plus the stored payment row, wrapped in a `{ message, data }` envelope.
    */
   async createOrder(
     dto: CreateSalesBookingPaymentOrderDto,
   ): Promise<ResultWithMessage<SalesBookingPaymentOrderResultDto>> {
+    const existing =
+      await this.salesBookingCardPaymentRepository.findByIdempotencyKey(
+        dto.idempotencyKey,
+      );
+    if (existing) {
+      return {
+        message: 'Payment order created',
+        data: {
+          paymentUrl: this.paymentGatewayService.extractPaymentUrl(
+            existing.gatewayResponse,
+          ),
+          orderReference: existing.orderReference,
+          merchantOrderReference: existing.merchantOrderReference,
+          gatewayResponse: existing.gatewayResponse,
+          payment: this.toPaymentDto(existing),
+        },
+      };
+    }
+
     const order = await this.paymentGatewayService.createOrder({
       merchantReferenceTag: MERCHANT_REFERENCE_TAG,
-      entityId: dto.bookingId,
+      // No booking record to key off anymore - the idempotency key is the
+      // only per-order identifier left, so it doubles as the traceability
+      // label's entityId too.
+      entityId: dto.idempotencyKey,
       amount: dto.amount,
       currency: dto.currency,
     });
 
     const payment = await this.salesBookingCardPaymentRepository.create({
-      bookingId: dto.bookingId,
       amount: dto.amount,
       currency: dto.currency ?? 'AED',
       status: 'CREATED',
       orderReference: order.orderReference,
       merchantOrderReference: order.merchantOrderReference,
+      idempotencyKey: dto.idempotencyKey,
       gatewayResponse: order.gatewayResponse,
     });
 
@@ -164,7 +189,6 @@ export class SalesBookingPaymentService {
   ): SalesBookingCardPaymentDto {
     return {
       id: payment.id,
-      bookingId: payment.bookingId,
       amount: payment.amount.toNumber(),
       currency: payment.currency,
       status: payment.status,

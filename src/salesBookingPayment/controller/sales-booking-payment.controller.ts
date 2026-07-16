@@ -18,7 +18,7 @@ export class SalesBookingPaymentController {
   /**
    * Creates an N-Genius hosted-payment-page order for a sales booking's token amount.
    *
-   * @param dto - Target booking id, amount, and optional currency.
+   * @param dto - Amount, idempotency key, and optional currency.
    * @returns The full N-Genius order-creation response and stored payment row, wrapped in a `{ message, data }` envelope.
    */
   @Post('orders')

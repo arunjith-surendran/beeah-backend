@@ -4,7 +4,6 @@
 // callers need to see raw status/errorMessage/gatewayResponse to debug it.
 export class SalesBookingCardPaymentDto {
   id: string;
-  bookingId: string;
   amount: number;
   currency: string;
   status: string;

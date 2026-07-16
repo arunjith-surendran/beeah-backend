@@ -63,6 +63,10 @@ model EoiCardPayment {
   status                 String    @default("CREATED")
   orderReference         String    @unique @map("order_reference")
   merchantOrderReference String    @map("merchant_order_reference")
+  // Caller-supplied dedup key: a retried createOrder call with the same key
+  // returns the existing order instead of creating a second one at N-Genius.
+  // Nullable only because rows created before this column existed have none.
+  idempotencyKey         String?   @unique @map("idempotency_key")
   gatewayResponse        Json?     @map("gateway_response")
   // Set once the deposit is recorded as a "Credit Card" mode-of-payment
   // entry in Salesforce - recordedAt staying null is what lets a failed
@@ -77,20 +81,20 @@ model EoiCardPayment {
   @@map("eoi_card_payments")
 }
 
-// Card (N-Genius) payment attempts against a Sales Booking - mirrors
-// `EoiCardPayment` exactly, one table per feature rather than a shared
-// generic one, kept in sync with `salesBookingPayment`
+// Card (N-Genius) payment attempts, not tied to any specific booking record -
+// mirrors `EoiCardPayment`'s mechanics, one table per feature rather than a
+// shared generic one, kept in sync with `salesBookingPayment`
 // (`SalesBookingCardPaymentRepository`). `salesforceRecordId`/`recordedAt`
 // stay unset for now since there's no Salesforce endpoint yet to record a
 // booking payment against - see SalesBookingPaymentService.recordDeposit.
 model SalesBookingCardPayment {
   id                     String    @id @default(uuid())
-  bookingId              String    @map("booking_id")
   amount                 Decimal
   currency               String
   status                 String    @default("CREATED")
   orderReference         String    @unique @map("order_reference")
   merchantOrderReference String    @map("merchant_order_reference")
+  idempotencyKey         String?   @unique @map("idempotency_key")
   gatewayResponse        Json?     @map("gateway_response")
   salesforceRecordId     String?   @map("salesforce_record_id")
   errorMessage           String?   @map("error_message")
@@ -98,6 +102,5 @@ model SalesBookingCardPayment {
   createdAt              DateTime  @default(now()) @map("created_at")
   updatedAt              DateTime  @updatedAt @map("updated_at")
 
-  @@index([bookingId])
   @@map("sales_booking_card_payments")
 }

@@ -23,13 +23,20 @@ const MERCHANT_ORDER_REFERENCE_PATTERN = /[^a-zA-Z0-9-]/g;
 const MERCHANT_ORDER_REFERENCE_MAX_LENGTH = 37;
 
 /**
- * Reusable N-Genius hosted-payment-page integration - purely mechanics, no
- * database access at all. Creates orders and checks their status; each
- * calling module (EOI payment, Sales Booking payment, ...) stores the
- * result in its own table and decides what "successful payment" means for
- * itself. That split - this module only ever talks to N-Genius, never to
- * Prisma - is what makes it reusable without forcing every consumer to
- * share one payments table.
+ * Reusable N-Genius order integration - purely mechanics, no database access
+ * at all. Creates orders and checks their status; each calling module (EOI
+ * payment, Sales Booking payment, ...) stores the result in its own table
+ * and decides what "successful payment" means for itself. That split - this
+ * module only ever talks to N-Genius, never to Prisma - is what makes it
+ * reusable without forcing every consumer to share one payments table.
+ *
+ * `createOrder` always returns the full raw order alongside `orderReference`;
+ * `paymentUrl` (`_links.payment.href`) is only ever a bonus field on top of
+ * that, not the contract - a hosted-page/WebView caller reads it, a native
+ * N-Genius SDK caller ignores it and hands the raw order to the SDK instead.
+ * N-Genius's order-creation API still requires `merchantAttributes.redirectUrl`
+ * regardless of which flow the caller ends up using - that's still sent, it's
+ * just no longer assumed to be *for* the caller.
  */
 @Injectable()
 export class PaymentGatewayService {
@@ -39,10 +46,10 @@ export class PaymentGatewayService {
   ) {}
 
   /**
-   * Creates an N-Genius hosted-payment-page order for any amount.
+   * Creates an N-Genius order for any amount.
    *
    * @param request - How much, and a tag identifying what it's for (for traceability only).
-   * @returns The hosted payment page URL, order reference, and raw gateway response for the caller to store.
+   * @returns The order reference, hosted-page URL (if the caller wants it), and raw gateway response for the caller to store or hand to a native SDK.
    */
   async createOrder(
     request: CreateGatewayOrderRequest,
@@ -64,11 +71,8 @@ export class PaymentGatewayService {
       },
     });
 
-    const paymentUrl = order._links.payment?.href;
-    required(paymentUrl, 'N-Genius payment URL');
-
     return {
-      paymentUrl,
+      paymentUrl: order._links.payment?.href,
       orderReference: order.reference,
       merchantOrderReference,
       gatewayResponse: order,
@@ -98,6 +102,22 @@ export class PaymentGatewayService {
       isSuccessful,
       gatewayResponse: order,
     };
+  }
+
+  /**
+   * Recovers the hosted payment page URL (if any) from a previously-stored
+   * raw N-Genius order response - used when a `createOrder` call is replayed
+   * with an idempotency key that already has an order, so a hosted-page
+   * caller can return the same `paymentUrl` without calling N-Genius again.
+   * A native-SDK caller doesn't need this at all - it replays the stored
+   * `gatewayResponse` itself.
+   *
+   * @param gatewayResponse - Raw N-Genius order response, as stored by the caller.
+   * @returns The hosted payment page URL, or `undefined` if the order has none.
+   */
+  extractPaymentUrl(gatewayResponse: unknown): string | undefined {
+    return (gatewayResponse as { _links?: { payment?: { href?: string } } })
+      ?._links?.payment?.href;
   }
 
   /**

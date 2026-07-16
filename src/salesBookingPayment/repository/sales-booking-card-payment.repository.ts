@@ -33,6 +33,20 @@ export class SalesBookingCardPaymentRepository {
   }
 
   /**
+   * Passes through to Prisma to find a sales booking card payment by its caller-supplied idempotency key.
+   *
+   * @param idempotencyKey - Idempotency key supplied on order creation.
+   * @returns The matching row, or `null` if none exists.
+   */
+  findByIdempotencyKey(
+    idempotencyKey: string,
+  ): Promise<SalesBookingCardPayment | null> {
+    return this.prisma.salesBookingCardPayment.findUnique({
+      where: { idempotencyKey },
+    });
+  }
+
+  /**
    * Passes through to Prisma to update a sales booking card payment by its
    * N-Genius order reference - used to sync the latest gateway state on
    * each status poll and, once a Salesforce recording endpoint exists, to

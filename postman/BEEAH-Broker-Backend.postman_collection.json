@@ -527,10 +527,10 @@
               }
             ],
             "url": "{{baseUrl}}/payments/ngenius-eoi/orders",
-            "description": "Creates an N-Genius hosted-payment-page order for an EOI's deposit amount. Returns a paymentUrl to open in a WebView and an orderReference to poll status with.",
+            "description": "Creates an N-Genius order for an EOI's deposit amount. Idempotent on idempotencyKey - resending the same key (e.g. on a retry) returns the already-created order instead of creating a second one at N-Genius; {{$guid}} generates a fresh one on every send, so replace it with a fixed string to test the replay behavior deliberately. Response always includes orderReference, merchantOrderReference, and the full raw gatewayResponse; paymentUrl is only present if the order has a hosted-page link (the EOI mobile screen no longer uses it - it now launches N-Genius's native SDK with gatewayResponse directly).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"eoiId\": \"{{eoiId}}\",\n  \"amount\": 10000,\n  \"currency\": \"AED\"\n}",
+              "raw": "{\n  \"eoiId\": \"{{eoiId}}\",\n  \"amount\": 10000,\n  \"currency\": \"AED\",\n  \"idempotencyKey\": \"{{$guid}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -576,10 +576,10 @@
               }
             ],
             "url": "{{baseUrl}}/payments/ngenius/sales-bookings/orders",
-            "description": "Creates an N-Genius hosted-payment-page order for a sales booking token amount. Unlike the EOI payment endpoints, this returns the FULL raw N-Genius response (gatewayResponse) and the full stored payment row (payment) - nothing is trimmed, since this feature is new and its Salesforce-recording step is still a stub.",
+            "description": "Creates an N-Genius order (not tied to a specific booking record - bookingId was removed from this endpoint). Idempotent on idempotencyKey - resending the same key returns the already-created order instead of creating a second one; {{$guid}} generates a fresh one on every send. Unlike the EOI payment endpoints, this returns the FULL raw N-Genius response (gatewayResponse) and the full stored payment row (payment) - nothing is trimmed, since this feature is new and its Salesforce-recording step is still a stub. paymentUrl is only present if the order has a hosted-page link.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"bookingId\": \"{{bookingId}}\",\n  \"amount\": 10000,\n  \"currency\": \"AED\"\n}",
+              "raw": "{\n  \"amount\": 10000,\n  \"currency\": \"AED\",\n  \"idempotencyKey\": \"{{$guid}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
