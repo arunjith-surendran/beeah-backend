@@ -1,12 +1,12 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, Logger } from '@nestjs/common';
+import type { SalesBookingCardPayment } from '@prisma/client';
 import { PaymentGatewayService } from '../../paymentGateway/service/payment-gateway.service';
-import { GatewayOrderResultDto } from '../../paymentGateway/dto/gateway-order-result.dto';
 import { SalesBookingCardPaymentRepository } from '../repository/sales-booking-card-payment.repository';
 import { required } from '../../common/utils/validators.util';
 import { CreateSalesBookingPaymentOrderDto } from '../dto/create-sales-booking-payment-order.dto';
+import { SalesBookingPaymentOrderResultDto } from '../dto/sales-booking-payment-order-result.dto';
 import { SalesBookingPaymentOrderStatusResultDto } from '../dto/sales-booking-payment-order-status-result.dto';
+import { SalesBookingCardPaymentDto } from '../dto/sales-booking-card-payment.dto';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 
 const MERCHANT_REFERENCE_TAG = 'SALES_BOOKING';
@@ -20,9 +20,15 @@ const RECORDING_NOT_IMPLEMENTED_MESSAGE =
  * Sales Booking payment orchestration - mirrors `EoiPaymentService` exactly,
  * proving `PaymentGatewayService` is genuinely reusable rather than
  * EOI-specific: same gateway, own `SalesBookingCardPayment` table (not the
- * EOI one). The one thing intentionally NOT implemented yet: what happens
- * in Salesforce when a booking payment succeeds. EOI's equivalent step
- * calls the `modeofpayments` Apex REST endpoint, which is hardcoded to an
+ * EOI one). Unlike EOI's narrower public contract, both endpoints here
+ * return the full raw N-Genius gateway response plus the full stored
+ * payment row, unfiltered - this feature is still new and its
+ * Salesforce-recording step isn't built yet, so callers need full
+ * visibility to debug it rather than a trimmed summary.
+ *
+ * The one thing intentionally NOT implemented yet: what happens in
+ * Salesforce when a booking payment succeeds. EOI's equivalent step calls
+ * the `modeofpayments` Apex REST endpoint, which is hardcoded to an
  * `eoiId` and has no sales-booking equivalent in this codebase today.
  * `recordDeposit` below is a deliberate stub - it does NOT set
  * `recordedAt`, so nothing is silently marked "done" without an actual
@@ -42,11 +48,11 @@ export class SalesBookingPaymentService {
    * Creates an N-Genius hosted-payment-page order for a sales booking's token amount.
    *
    * @param dto - Target booking id, amount (major currency units), and optional currency.
-   * @returns The hosted payment page URL and order reference, wrapped in a `{ message, data }` envelope.
+   * @returns The full N-Genius order-creation response plus the stored payment row, wrapped in a `{ message, data }` envelope.
    */
   async createOrder(
     dto: CreateSalesBookingPaymentOrderDto,
-  ): Promise<ResultWithMessage<GatewayOrderResultDto>> {
+  ): Promise<ResultWithMessage<SalesBookingPaymentOrderResultDto>> {
     const order = await this.paymentGatewayService.createOrder({
       merchantReferenceTag: MERCHANT_REFERENCE_TAG,
       entityId: dto.bookingId,
@@ -54,7 +60,7 @@ export class SalesBookingPaymentService {
       currency: dto.currency,
     });
 
-    await this.salesBookingCardPaymentRepository.create({
+    const payment = await this.salesBookingCardPaymentRepository.create({
       bookingId: dto.bookingId,
       amount: dto.amount,
       currency: dto.currency ?? 'AED',
@@ -69,6 +75,9 @@ export class SalesBookingPaymentService {
       data: {
         paymentUrl: order.paymentUrl,
         orderReference: order.orderReference,
+        merchantOrderReference: order.merchantOrderReference,
+        gatewayResponse: order.gatewayResponse,
+        payment: this.toPaymentDto(payment),
       },
     };
   }
@@ -79,7 +88,7 @@ export class SalesBookingPaymentService {
    * confirmed server-side rather than trusting the redirect alone.
    *
    * @param orderReference - N-Genius order reference returned by `createOrder`.
-   * @returns The order's raw state plus a simplified success flag.
+   * @returns The full N-Genius status response plus the stored payment row, wrapped in a `{ message, data }` envelope.
    */
   async getOrderStatus(
     orderReference: string,
@@ -87,21 +96,22 @@ export class SalesBookingPaymentService {
     const result =
       await this.paymentGatewayService.getOrderStatus(orderReference);
 
-    const payment =
+    let payment =
       await this.salesBookingCardPaymentRepository.findByOrderReference(
         orderReference,
       );
     required(payment, 'Sales booking card payment');
 
     if (payment.status !== result.state) {
-      await this.salesBookingCardPaymentRepository.updateByOrderReference(
-        orderReference,
-        { status: result.state, gatewayResponse: result.gatewayResponse },
-      );
+      payment =
+        await this.salesBookingCardPaymentRepository.updateByOrderReference(
+          orderReference,
+          { status: result.state, gatewayResponse: result.gatewayResponse },
+        );
     }
 
     if (result.isSuccessful && !payment.recordedAt) {
-      await this.recordDeposit(orderReference);
+      payment = await this.recordDeposit(orderReference);
     }
 
     return {
@@ -110,6 +120,8 @@ export class SalesBookingPaymentService {
         orderReference: result.orderReference,
         state: result.state,
         isSuccessful: result.isSuccessful,
+        gatewayResponse: result.gatewayResponse,
+        payment: this.toPaymentDto(payment),
       },
     };
   }
@@ -119,15 +131,44 @@ export class SalesBookingPaymentService {
    * class-level doc comment for why this doesn't call anything yet.
    *
    * @param orderReference - N-Genius order reference.
+   * @returns The updated payment row.
    */
-  private async recordDeposit(orderReference: string): Promise<void> {
+  private async recordDeposit(
+    orderReference: string,
+  ): Promise<SalesBookingCardPayment> {
     this.logger.warn(
       `Sales booking payment ${orderReference} captured but not recorded in Salesforce - not implemented yet.`,
     );
 
-    await this.salesBookingCardPaymentRepository.updateByOrderReference(
+    return this.salesBookingCardPaymentRepository.updateByOrderReference(
       orderReference,
       { errorMessage: RECORDING_NOT_IMPLEMENTED_MESSAGE },
     );
+  }
+
+  /**
+   * Maps the stored Prisma row to its public DTO shape (Decimal -> number).
+   *
+   * @param payment - Stored payment row.
+   * @returns The row shaped for API consumers.
+   */
+  private toPaymentDto(
+    payment: SalesBookingCardPayment,
+  ): SalesBookingCardPaymentDto {
+    return {
+      id: payment.id,
+      bookingId: payment.bookingId,
+      amount: payment.amount.toNumber(),
+      currency: payment.currency,
+      status: payment.status,
+      orderReference: payment.orderReference,
+      merchantOrderReference: payment.merchantOrderReference,
+      gatewayResponse: payment.gatewayResponse,
+      salesforceRecordId: payment.salesforceRecordId,
+      errorMessage: payment.errorMessage,
+      recordedAt: payment.recordedAt,
+      createdAt: payment.createdAt,
+      updatedAt: payment.updatedAt,
+    };
   }
 }

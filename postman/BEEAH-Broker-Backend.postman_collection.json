@@ -576,7 +576,7 @@
               }
             ],
             "url": "{{baseUrl}}/payments/ngenius/sales-bookings/orders",
-            "description": "Creates an N-Genius hosted-payment-page order for a sales booking's token amount. Returns a paymentUrl to open in a WebView and an orderReference to poll status with.",
+            "description": "Creates an N-Genius hosted-payment-page order for a sales booking token amount. Unlike the EOI payment endpoints, this returns the FULL raw N-Genius response (gatewayResponse) and the full stored payment row (payment) - nothing is trimmed, since this feature is new and its Salesforce-recording step is still a stub.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"bookingId\": \"{{bookingId}}\",\n  \"amount\": 10000,\n  \"currency\": \"AED\"\n}",
@@ -610,7 +610,7 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/payments/ngenius/sales-bookings/orders/{{orderReference}}",
-            "description": "Polls an N-Genius order's current status for a sales booking payment. NOTE: successful payments are NOT yet recorded in Salesforce for this feature - SalesBookingPaymentService.recordDeposit is a deliberate stub pending a Salesforce Apex REST endpoint for booking payments."
+            "description": "Polls an N-Genius order's current status for a sales booking payment. Returns the FULL raw N-Genius response (gatewayResponse) and the full stored payment row (payment), including status/errorMessage/salesforceRecordId - nothing is trimmed. NOTE: successful payments are NOT yet recorded in Salesforce for this feature - SalesBookingPaymentService.recordDeposit is a deliberate stub pending a Salesforce Apex REST endpoint for booking payments; check payment.errorMessage for that stub note."
           },
           "response": []
         },
