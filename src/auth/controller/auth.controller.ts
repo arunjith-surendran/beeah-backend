@@ -32,7 +32,7 @@ export class AuthController {
   }
 
   /**
-   * Authenticates a user by email/password and issues auth tokens.
+   * Authenticates a user by email/password and issues auth tokens.dasdsadad
    *
    * @param dto - Login credentials.
    * @throws {UnauthorizedException} When the email or password is invalid.
