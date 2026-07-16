@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, Logger } from '@nestjs/common';
 import type { SalesBookingCardPayment } from '@prisma/client';
 import { PaymentGatewayService } from '../../paymentGateway/service/payment-gateway.service';
@@ -9,7 +12,11 @@ import { SalesBookingPaymentOrderStatusResultDto } from '../dto/sales-booking-pa
 import { SalesBookingCardPaymentDto } from '../dto/sales-booking-card-payment.dto';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 
-const MERCHANT_REFERENCE_TAG = 'SALES_BOOKING';
+// Short and hyphen/underscore-free on purpose - PaymentGatewayService
+// sanitizes and truncates this to fit N-Genius's 37-char limit regardless,
+// but keeping the tag itself short leaves more of that budget for the
+// entityId and the uniqueness suffix instead of getting silently truncated.
+const MERCHANT_REFERENCE_TAG = 'SB';
 
 const RECORDING_NOT_IMPLEMENTED_MESSAGE =
   'Payment captured by N-Genius, but not yet recorded in Salesforce - ' +

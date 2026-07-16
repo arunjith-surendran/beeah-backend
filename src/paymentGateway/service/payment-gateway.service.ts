@@ -16,6 +16,12 @@ const SUCCESSFUL_STATES = new Set([
 
 const DEFAULT_CURRENCY = 'AED';
 
+// N-Genius rejects merchantOrderReference that doesn't match this exactly
+// (confirmed against the live sandbox, not assumed from docs) - letters,
+// digits, and hyphens only, 1-37 characters.
+const MERCHANT_ORDER_REFERENCE_PATTERN = /[^a-zA-Z0-9-]/g;
+const MERCHANT_ORDER_REFERENCE_MAX_LENGTH = 37;
+
 /**
  * Reusable N-Genius hosted-payment-page integration - purely mechanics, no
  * database access at all. Creates orders and checks their status; each
@@ -43,7 +49,7 @@ export class PaymentGatewayService {
   ): Promise<GatewayOrderCreationResult> {
     const redirectUrl = this.config.getOrThrow<string>('NGENIUS_REDIRECT_URL');
     const currency = request.currency ?? DEFAULT_CURRENCY;
-    const merchantOrderReference = `${request.merchantReferenceTag}-${request.entityId}-${Date.now()}`;
+    const merchantOrderReference = this.buildMerchantOrderReference(request);
 
     const order = await this.ngeniusClient.createOrder({
       action: 'SALE',
@@ -92,5 +98,38 @@ export class PaymentGatewayService {
       isSuccessful,
       gatewayResponse: order,
     };
+  }
+
+  /**
+   * Builds a merchantOrderReference that's guaranteed to satisfy N-Genius's
+   * constraint regardless of what the caller's tag/entityId look like -
+   * strips any character outside [a-zA-Z0-9-] (e.g. an underscore in a tag,
+   * or stray characters in an id) and truncates to 37 characters. This is
+   * purely a traceability label on N-Genius's own dashboard, not used for
+   * lookups on our side (we key off N-Genius's own `orderReference` for
+   * that), so sanitizing/truncating it can never lose real data.
+   *
+   * @param request - Tag and entity id to build the reference from.
+   * @returns A merchantOrderReference safe to send to N-Genius.
+   */
+  private buildMerchantOrderReference(
+    request: CreateGatewayOrderRequest,
+  ): string {
+    const tag = request.merchantReferenceTag.replace(
+      MERCHANT_ORDER_REFERENCE_PATTERN,
+      '',
+    );
+    const entityId = request.entityId.replace(
+      MERCHANT_ORDER_REFERENCE_PATTERN,
+      '',
+    );
+    // Base36 instead of decimal - same uniqueness, far fewer characters, so
+    // more of the budget goes to the tag/entityId instead of the timestamp.
+    const suffix = Date.now().toString(36);
+
+    return `${tag}-${entityId}-${suffix}`.slice(
+      0,
+      MERCHANT_ORDER_REFERENCE_MAX_LENGTH,
+    );
   }
 }
