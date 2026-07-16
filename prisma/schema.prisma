@@ -46,3 +46,58 @@ model SalesforceToken {
 
   @@map("salesforce_tokens")
 }
+
+// Card (N-Genius) payment attempts against an EOI. Manual (Bank Transfer/
+// Cheque/Cash) payments are recorded in Salesforce only, not stored here at
+// all - our backend only stores card payment details. Owned/queried
+// exclusively by `eoiPayment` (`EoiCardPaymentRepository`); the reusable
+// `paymentGateway` module never touches Prisma directly, so it doesn't know
+// EOI or Sales Booking payments are stored in separate tables.
+model EoiCardPayment {
+  id                     String    @id @default(uuid())
+  eoiId                  String    @map("eoi_id")
+  amount                 Decimal
+  currency               String
+  // N-Genius order state: CREATED/CAPTURED/FAILED/... (mirrors N-Genius's
+  // own vocabulary, not Salesforce's).
+  status                 String    @default("CREATED")
+  orderReference         String    @unique @map("order_reference")
+  merchantOrderReference String    @map("merchant_order_reference")
+  gatewayResponse        Json?     @map("gateway_response")
+  // Set once the deposit is recorded as a "Credit Card" mode-of-payment
+  // entry in Salesforce - recordedAt staying null is what lets a failed
+  // recording attempt retry on the next status poll.
+  salesforceRecordId     String?   @map("salesforce_record_id")
+  errorMessage           String?   @map("error_message")
+  recordedAt             DateTime? @map("recorded_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@index([eoiId])
+  @@map("eoi_card_payments")
+}
+
+// Card (N-Genius) payment attempts against a Sales Booking - mirrors
+// `EoiCardPayment` exactly, one table per feature rather than a shared
+// generic one, kept in sync with `salesBookingPayment`
+// (`SalesBookingCardPaymentRepository`). `salesforceRecordId`/`recordedAt`
+// stay unset for now since there's no Salesforce endpoint yet to record a
+// booking payment against - see SalesBookingPaymentService.recordDeposit.
+model SalesBookingCardPayment {
+  id                     String    @id @default(uuid())
+  bookingId              String    @map("booking_id")
+  amount                 Decimal
+  currency               String
+  status                 String    @default("CREATED")
+  orderReference         String    @unique @map("order_reference")
+  merchantOrderReference String    @map("merchant_order_reference")
+  gatewayResponse        Json?     @map("gateway_response")
+  salesforceRecordId     String?   @map("salesforce_record_id")
+  errorMessage           String?   @map("error_message")
+  recordedAt             DateTime? @map("recorded_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@index([bookingId])
+  @@map("sales_booking_card_payments")
+}

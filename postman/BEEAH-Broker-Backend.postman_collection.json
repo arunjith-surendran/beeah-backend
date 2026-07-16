@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "96d416df-dcbb-4cf7-97bf-1c869a58fdc7",
     "name": "BEEAH Broker Backend",
-    "description": "NestJS backend API for the BEEAH Broker Portal (beeah-broker-backend). Covers auth, users, leads, EOI, bookings, commissions, dashboard, payment plans, projects, sales bookings, sales offers, units, documents, and agency onboarding (create-new-account).",
+    "description": "NestJS backend API for the BEEAH Broker Portal (beeah-broker-backend). Covers auth, users, leads, EOI, N-Genius card payments (EOI + sales booking), bookings, commissions, dashboard, payment plans, projects, sales bookings, sales offers, units, documents, and agency onboarding (create-new-account).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -73,6 +73,11 @@
     },
     {
       "key": "eoiId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "orderReference",
       "value": "",
       "type": "string"
     }
@@ -502,6 +507,122 @@
                   "language": "json"
                 }
               }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Create EOI Payment Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/payments/ngenius-eoi/orders",
+            "description": "Creates an N-Genius hosted-payment-page order for an EOI's deposit amount. Returns a paymentUrl to open in a WebView and an orderReference to poll status with.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eoiId\": \"{{eoiId}}\",\n  \"amount\": 10000,\n  \"currency\": \"AED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  const data = body.data || {};",
+                  "  if (data.orderReference) pm.collectionVariables.set('orderReference', data.orderReference);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get EOI Payment Order Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/payments/ngenius-eoi/orders/{{orderReference}}",
+            "description": "Polls an N-Genius order's current status. On first confirmed success, this also records the deposit as a \"Credit Card\" mode-of-payment entry against the EOI in Salesforce."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Sales Booking Payment Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/payments/ngenius/sales-bookings/orders",
+            "description": "Creates an N-Genius hosted-payment-page order for a sales booking's token amount. Returns a paymentUrl to open in a WebView and an orderReference to poll status with.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookingId\": \"{{bookingId}}\",\n  \"amount\": 10000,\n  \"currency\": \"AED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const body = pm.response.json();",
+                  "  const data = body.data || {};",
+                  "  if (data.orderReference) pm.collectionVariables.set('orderReference', data.orderReference);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Sales Booking Payment Order Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/payments/ngenius/sales-bookings/orders/{{orderReference}}",
+            "description": "Polls an N-Genius order's current status for a sales booking payment. NOTE: successful payments are NOT yet recorded in Salesforce for this feature - SalesBookingPaymentService.recordDeposit is a deliberate stub pending a Salesforce Apex REST endpoint for booking payments."
+          },
+          "response": []
+        },
+        {
+          "name": "N-Genius Payment Callback (landing page)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/payments/ngenius/callback?ref={{orderReference}}",
+            "description": "Public fallback landing page N-Genius redirects to after a hosted payment page completes. The mobile app's WebView normally intercepts navigation to this URL before it loads; this only renders if opened outside the app's WebView. Shared across all payment features (EOI, Sales Booking, ...) since it doesn't know or care what the order was for.",
+            "auth": {
+              "type": "noauth"
             }
           },
           "response": []
