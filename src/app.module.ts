@@ -19,8 +19,6 @@ import { PaymentPlanModule } from './paymentPlan/payment-plan.module';
 import { SalesOfferModule } from './salesOffer/sales-offer.module';
 import { DocumentModule } from './document/document.module';
 import { HealthModule } from './health/health.module';
-import { NationalityModule } from './nationality/nationality.module';
-import { CountryModule } from './country/country.module';
 import { EoiPaymentModule } from './eoiPayment/eoi-payment.module';
 import { SalesBookingPaymentModule } from './salesBookingPayment/sales-booking-payment.module';
 
@@ -48,8 +46,6 @@ import { SalesBookingPaymentModule } from './salesBookingPayment/sales-booking-p
     SalesOfferModule,
     DocumentModule,
     HealthModule,
-    NationalityModule,
-    CountryModule,
     EoiPaymentModule,
     SalesBookingPaymentModule,
   ],

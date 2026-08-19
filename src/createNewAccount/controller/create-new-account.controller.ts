@@ -1,13 +1,12 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { CreateNewAccountService } from '../service/create-new-account.service';
-import { CreateNewAccountDto } from '../dto/create-new-account.dto';
 import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
-import { CreateNewAccountResultDto } from '../dto/create-new-account-result.dto';
+import { CreateNewAccountApexResponse } from '../../salesforce/modules/createNewAccount/types/create-new-account.type';
+import { FormFieldConfigRecord } from '../../salesforce/modules/createNewAccount/types/get-form-details.type';
+import { RequiredDocumentRecord } from '../../salesforce/modules/createNewAccount/types/get-required-documents.type';
+import { GetFormDetailsDto } from '../dto/get-form-details.dto';
 import { GetRequiredDocumentsDto } from '../dto/get-required-documents.dto';
-import { RequiredDocumentDto } from '../dto/required-document.dto';
 import { UploadOnboardingDocumentDto } from '../dto/upload-onboarding-document.dto';
-import { UploadOnboardingDocumentResultDto } from '../dto/upload-onboarding-document-result.dto';
-import { AgencySubTypeGroupDto } from '../dto/agency-sub-type-group.dto';
 
 @Controller('create-new-account')
 export class CreateNewAccountController {
@@ -16,16 +15,46 @@ export class CreateNewAccountController {
   ) {}
 
   /**
-   * Submits a new agency onboarding application, including bank and document details.
+   * Fetches the dynamic form field configuration (grouped by section) for a given
+   * agency sub-type, so the client can render the onboarding form fully driven by
+   * Salesforce config instead of hardcoding sections/fields per sub-type.
    *
-   * @param dto - Onboarding, bank, and document details submitted by the client.
-   * @returns The created onboarding and bank record ids wrapped in a `{ message, data }` envelope.
+   * @param dto - The agency sub-type to fetch form field config for.
+   * @returns The form field config grouped by section, wrapped in a `{ message, data }` envelope.
+   */
+  @Get('form-details')
+  getFormDetails(
+    @Query() dto: GetFormDetailsDto,
+  ): Promise<ResultWithMessage<Record<string, FormFieldConfigRecord[]>>> {
+    return this.createNewAccountService.getFormDetails(dto);
+  }
+
+  /**
+   * Fetches the mandatory document checklist for a given agency sub-type.
+   *
+   * @param dto - The agency sub-type to fetch required documents for.
+   * @returns The mandatory document list wrapped in a `{ message, data }` envelope.
+   */
+  @Get('required-documents')
+  getRequiredDocuments(
+    @Query() dto: GetRequiredDocumentsDto,
+  ): Promise<ResultWithMessage<RequiredDocumentRecord[]>> {
+    return this.createNewAccountService.getRequiredDocuments(dto);
+  }
+
+  /**
+   * Submits a new agency onboarding application. The body is forwarded to
+   * Salesforce as-is - no fixed DTO, since the set of valid sections/fields is
+   * entirely config-driven per sub-type (see GET form-details).
+   *
+   * @param body - The full onboarding submission.
+   * @returns The raw Salesforce Apex REST response wrapped in a `{ message, data }` envelope.
    */
   @Post('add')
   create(
-    @Body() dto: CreateNewAccountDto,
-  ): Promise<ResultWithMessage<CreateNewAccountResultDto>> {
-    return this.createNewAccountService.createNewAccount(dto);
+    @Body() body: Record<string, unknown>,
+  ): Promise<ResultWithMessage<CreateNewAccountApexResponse>> {
+    return this.createNewAccountService.createNewAccount(body);
   }
 
   /**
@@ -39,30 +68,7 @@ export class CreateNewAccountController {
   @Post('upload-document')
   uploadDocument(
     @Body() dto: UploadOnboardingDocumentDto,
-  ): Promise<ResultWithMessage<UploadOnboardingDocumentResultDto>> {
+  ): Promise<ResultWithMessage<{ documentId: string; azureUrl: string }>> {
     return this.createNewAccountService.uploadDocument(dto);
-  }
-
-  /**
-   * Fetches the mandatory document checklist for a given agency sub-type.
-   *
-   * @param dto - The agency sub-type to fetch required documents for.
-   * @returns The mandatory document list wrapped in a `{ message, data }` envelope.
-   */
-  @Get('get-required-documents')
-  getRequiredDocuments(
-    @Body() dto: GetRequiredDocumentsDto,
-  ): Promise<ResultWithMessage<RequiredDocumentDto[]>> {
-    return this.createNewAccountService.getRequiredDocuments(dto);
-  }
-
-  /**
-   * Fetches the valid agency sub-types for every category, for populating the onboarding form.
-   *
-   * @returns The agency sub-types grouped by category, wrapped in a `{ message, data }` envelope.
-   */
-  @Get('sub-types')
-  getAgencySubTypes(): Promise<ResultWithMessage<AgencySubTypeGroupDto[]>> {
-    return this.createNewAccountService.getAgencySubTypes();
   }
 }

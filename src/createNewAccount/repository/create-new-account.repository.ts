@@ -8,6 +8,10 @@ import {
   GetRequiredDocumentsApexPayload,
   GetRequiredDocumentsApexResponse,
 } from '../../salesforce/modules/createNewAccount/types/get-required-documents.type';
+import {
+  GetFormDetailsApexPayload,
+  GetFormDetailsApexResponse,
+} from '../../salesforce/modules/createNewAccount/types/get-form-details.type';
 import { DocumentService as SalesforceDocumentService } from '../../salesforce/modules/document/document.service';
 import {
   UploadDocumentApexPayload,
@@ -22,9 +26,11 @@ export class CreateNewAccountRepository {
   ) {}
 
   /**
-   * Passes through to the Salesforce create-new-account service.
+   * Passes through to the Salesforce `brokeronboarding` Apex REST endpoint - the
+   * payload is whatever the client sent, unvalidated and unmodified, since the
+   * set of sections/fields is entirely config-driven on the Salesforce side.
    *
-   * @param payload - Onboarding, bank, and document fields in the exact shape expected by the Apex REST endpoint.
+   * @param payload - The full onboarding submission, keyed by section/field exactly as the client built it.
    * @returns The raw Salesforce Apex REST response.
    */
   createNewAccount(
@@ -43,6 +49,18 @@ export class CreateNewAccountRepository {
     payload: GetRequiredDocumentsApexPayload,
   ): Promise<GetRequiredDocumentsApexResponse> {
     return this.salesforceCreateNewAccountService.getRequiredDocuments(payload);
+  }
+
+  /**
+   * Passes through to the Salesforce `getFormDetails` Apex REST endpoint.
+   *
+   * @param payload - The mode, metadata type, and agency sub-type to fetch form config for.
+   * @returns The raw Apex REST response, keyed by section name.
+   */
+  getFormDetails(
+    payload: GetFormDetailsApexPayload,
+  ): Promise<GetFormDetailsApexResponse> {
+    return this.salesforceCreateNewAccountService.getFormDetails(payload);
   }
 
   /**

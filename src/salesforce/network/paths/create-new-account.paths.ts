@@ -3,3 +3,6 @@ export const CREATE_NEW_ACCOUNT_APEX_REST_PATH =
 
 export const GET_REQUIRED_DOCUMENTS_APEX_REST_PATH =
   '/services/apexrest/getrequireddocuments';
+
+export const GET_FORM_DETAILS_APEX_REST_PATH =
+  '/services/apexrest/getFormDetails';

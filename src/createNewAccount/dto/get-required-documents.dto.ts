@@ -1,7 +1,8 @@
-import { IsEnum } from 'class-validator';
-import { AgencySubType } from './agency-sub-type.enum';
+import { IsNotEmpty, IsString } from 'class-validator';
 
+// subType is intentionally an opaque string, not an enum - see GetFormDetailsDto.
 export class GetRequiredDocumentsDto {
-  @IsEnum(AgencySubType)
-  subType: AgencySubType;
+  @IsString()
+  @IsNotEmpty()
+  subType: string;
 }
