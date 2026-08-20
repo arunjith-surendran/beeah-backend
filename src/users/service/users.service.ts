@@ -63,4 +63,15 @@ export class UsersService {
   ): Promise<User> {
     return this.usersRepository.updateRefreshToken(userId, refreshToken);
   }
+
+  /**
+   * Updates a user's stored (hashed) password.
+   *
+   * @param userId - Id of the user to update.
+   * @param password - New hashed password.
+   * @returns The updated user.
+   */
+  updatePassword(userId: string, password: string): Promise<User> {
+    return this.usersRepository.updatePassword(userId, password);
+  }
 }

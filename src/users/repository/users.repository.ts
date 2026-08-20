@@ -68,4 +68,18 @@ export class UsersRepository {
       data: { refreshToken },
     });
   }
+
+  /**
+   * Passes through to Prisma to update a user's stored (hashed) password.
+   *
+   * @param userId - Id of the user to update.
+   * @param password - New hashed password.
+   * @returns The updated user.
+   */
+  updatePassword(userId: string, password: string): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { password },
+    });
+  }
 }

@@ -1,20 +1,29 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomInt } from 'crypto';
 import { User } from '@prisma/client';
 import { UsersService } from '../../users/service/users.service';
 import { sanitizeUser } from '../../users/user.util';
 import { AuthRepository } from '../repository/auth.repository';
+import { MailService } from '../../mail/mail.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { JwtPayload } from '../types/jwt-payload.type';
 import {
+  notFoundException,
   required,
   unauthorizedException,
 } from '../../common/utils/validators.util';
 
 const SALT_ROUNDS = 10;
+const OTP_EXPIRY_MINUTES = 10;
+const MAX_OTP_ATTEMPTS = 5;
 
 @Injectable()
 export class AuthService {
@@ -23,6 +32,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly authRepository: AuthRepository,
+    private readonly mailService: MailService,
   ) {}
 
   /**
@@ -117,6 +127,100 @@ export class AuthService {
    */
   async logout(userId: string) {
     await this.usersService.updateRefreshToken(userId, null);
+  }
+
+  /**
+   * Generates a fresh OTP for a registered email and emails it, for the
+   * forgot-password flow. Always requires an existing account (the client
+   * already confirmed this via `checkUserExists` first, but this is
+   * re-checked here since it's what actually decides whether to send mail).
+   *
+   * @param email - Email to send the password-reset OTP to.
+   * @throws {NotFoundException} When no account matches the email.
+   */
+  async sendPasswordResetOtp(email: string): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(email);
+    notFoundException(user, 'No account found with this email');
+
+    const otp = randomInt(100000, 999999).toString();
+    const otpHash = await bcrypt.hash(otp, SALT_ROUNDS);
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    await this.authRepository.saveOtp(email, otpHash, expiresAt);
+    await this.mailService.sendOtpEmail(email, otp, OTP_EXPIRY_MINUTES);
+
+    return { message: 'OTP sent successfully' };
+  }
+
+  /**
+   * Verifies a submitted OTP against the one issued by `sendPasswordResetOtp`.
+   * Marks the OTP record verified on success - `resetPassword` requires that
+   * flag, so a password can never be reset without first proving the OTP.
+   *
+   * @param email - Email the OTP was issued for.
+   * @param otp - The plaintext code the user submitted.
+   * @throws {NotFoundException} When no OTP was requested for this email.
+   * @throws {BadRequestException} When the OTP is expired, exhausted, or doesn't match.
+   */
+  async verifyPasswordResetOtp(
+    email: string,
+    otp: string,
+  ): Promise<{ message: string }> {
+    const record = await this.authRepository.findOtp(email);
+    notFoundException(record, 'No OTP request found for this email');
+
+    if (record.expiresAt < new Date()) {
+      await this.authRepository.deleteOtp(email);
+      throw new BadRequestException(
+        'OTP has expired - please request a new one',
+      );
+    }
+    if (record.attempts >= MAX_OTP_ATTEMPTS) {
+      await this.authRepository.deleteOtp(email);
+      throw new BadRequestException(
+        'Too many incorrect attempts - please request a new OTP',
+      );
+    }
+
+    const matches = await bcrypt.compare(otp, record.otpHash);
+    if (!matches) {
+      await this.authRepository.incrementOtpAttempts(email);
+      throw new BadRequestException('Invalid OTP');
+    }
+
+    await this.authRepository.markOtpVerified(email);
+    return { message: 'OTP verified successfully' };
+  }
+
+  /**
+   * Sets a new password for an email that has a verified, unexpired OTP on
+   * file. This is the only gate stopping `updatePassword` from being an
+   * unauthenticated password-reset-by-email-alone endpoint - never relax it.
+   *
+   * @param email - Email to reset the password for.
+   * @param password - New plaintext password (hashed before storage).
+   * @throws {NotFoundException} When no account matches the email.
+   * @throws {BadRequestException} When there's no verified, unexpired OTP for this email.
+   */
+  async resetPassword(
+    email: string,
+    password: string,
+  ): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(email);
+    notFoundException(user, 'No account found with this email');
+
+    const record = await this.authRepository.findOtp(email);
+    if (!record || !record.verified || record.expiresAt < new Date()) {
+      throw new BadRequestException(
+        'Please verify your OTP before resetting your password',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+    await this.usersService.updatePassword(user.id, hashedPassword);
+    await this.authRepository.deleteOtp(email);
+
+    return { message: 'Password updated successfully' };
   }
 
   /**

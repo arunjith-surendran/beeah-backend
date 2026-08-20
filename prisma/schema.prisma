@@ -104,3 +104,21 @@ model SalesBookingCardPayment {
 
   @@map("sales_booking_card_payments")
 }
+
+// One active OTP per email (forgot-password flow) - sendOtp upserts this,
+// overwriting any previous unused code. `verified` only gets set by a
+// successful verifyOtp call and is what updatePassword checks before letting
+// the password actually change - without it, anyone who knew an email could
+// call updatePassword directly with no OTP proof at all.
+model PasswordResetOtp {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  otpHash   String   @map("otp_hash")
+  expiresAt DateTime @map("expires_at")
+  attempts  Int      @default(0)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("password_reset_otps")
+}

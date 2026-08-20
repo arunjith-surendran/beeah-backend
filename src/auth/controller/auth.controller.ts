@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Put,
   Get,
   Query,
   Body,
@@ -12,6 +13,9 @@ import type { User } from '@prisma/client';
 import { AuthService } from '../service/auth.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
+import { SendOtpDto } from '../dto/send-otp.dto';
+import { VerifyOtpDto } from '../dto/verify-otp.dto';
+import { UpdatePasswordDto } from '../dto/update-password.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { JwtRefreshGuard } from '../guards/jwt-refresh.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
@@ -53,6 +57,46 @@ export class AuthController {
   @Get('check-user')
   checkUserExists(@Query('email') email: string) {
     return this.authService.checkUserExists(email);
+  }
+
+  /**
+   * Sends a one-time password reset code to the given email, for the
+   * forgot-password flow. The client is expected to have already confirmed
+   * the account exists via `GET /auth/check-user`.
+   *
+   * @param dto - Email to send the OTP to.
+   * @throws {NotFoundException} When no account matches the email.
+   */
+  @HttpCode(HttpStatus.OK)
+  @Post('sendOtp')
+  sendOtp(@Body() dto: SendOtpDto) {
+    return this.authService.sendPasswordResetOtp(dto.email);
+  }
+
+  /**
+   * Verifies a password-reset OTP previously issued by `sendOtp`.
+   *
+   * @param dto - Email and the OTP the user submitted.
+   * @throws {NotFoundException} When no OTP was requested for this email.
+   * @throws {BadRequestException} When the OTP is expired, exhausted, or doesn't match.
+   */
+  @HttpCode(HttpStatus.OK)
+  @Post('verifyOtp')
+  verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyPasswordResetOtp(dto.email, dto.otp);
+  }
+
+  /**
+   * Sets a new password for an email with a verified OTP on file - the final
+   * step of the forgot-password flow.
+   *
+   * @param dto - Email and new password.
+   * @throws {NotFoundException} When no account matches the email.
+   * @throws {BadRequestException} When there's no verified, unexpired OTP for this email.
+   */
+  @Put('updatePassword')
+  updatePassword(@Body() dto: UpdatePasswordDto) {
+    return this.authService.resetPassword(dto.email, dto.password);
   }
 
   /**
