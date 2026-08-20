@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateNewAccountRepository } from '../repository/create-new-account.repository';
 import { CreateNewAccountApexResponse } from '../../salesforce/modules/createNewAccount/types/create-new-account.type';
