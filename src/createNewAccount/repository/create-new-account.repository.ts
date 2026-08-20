@@ -4,10 +4,7 @@ import {
   CreateNewAccountApexResponse,
   CreateNewAccountPayload,
 } from '../../salesforce/modules/createNewAccount/types/create-new-account.type';
-import {
-  GetRequiredDocumentsApexPayload,
-  GetRequiredDocumentsApexResponse,
-} from '../../salesforce/modules/createNewAccount/types/get-required-documents.type';
+import { GetRequiredDocumentsApexResponse } from '../../salesforce/modules/createNewAccount/types/get-required-documents.type';
 import {
   GetFormDetailsApexPayload,
   GetFormDetailsApexResponse,
@@ -40,15 +37,19 @@ export class CreateNewAccountRepository {
   }
 
   /**
-   * Passes through to the Salesforce `getrequireddocuments` Apex REST endpoint.
+   * Passes through to the shared Salesforce `getFormDetails` Apex REST endpoint,
+   * with `metadataType` set to the required-documents config type - no dedicated
+   * Apex REST integration for required documents anymore.
    *
-   * @param payload - The agency sub-type to fetch required documents for.
-   * @returns The raw Apex REST response.
+   * @param payload - The mode, metadata type, and agency sub-type to fetch the document checklist for.
+   * @returns The raw Apex REST response containing the mandatory document list.
    */
   getRequiredDocuments(
-    payload: GetRequiredDocumentsApexPayload,
+    payload: GetFormDetailsApexPayload,
   ): Promise<GetRequiredDocumentsApexResponse> {
-    return this.salesforceCreateNewAccountService.getRequiredDocuments(payload);
+    return this.salesforceCreateNewAccountService.getFormDetails<GetRequiredDocumentsApexResponse>(
+      payload,
+    );
   }
 
   /**

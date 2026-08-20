@@ -11,9 +11,11 @@ import { UploadOnboardingDocumentDto } from '../dto/upload-onboarding-document.d
 // Fixed integration parameters for the `getFormDetails` Apex call - not form
 // data, so unlike subType these are legitimately constant regardless of
 // sub-type: they identify *which* custom metadata type/mode to read, not which
-// fields it contains.
+// fields it contains. The same Apex endpoint serves both the form field config
+// and the required-documents checklist - only metadataType differs.
 const FORM_DETAILS_MODE = 'registration';
 const FORM_DETAILS_METADATA_TYPE = 'Broker Field Config';
+const REQUIRED_DOCUMENTS_METADATA_TYPE = 'Broker Document Config';
 
 @Injectable()
 export class CreateNewAccountService {
@@ -77,8 +79,11 @@ export class CreateNewAccountService {
   }
 
   /**
-   * Fetches the mandatory document checklist for a given agency sub-type - fully
-   * dynamic, so the client never hardcodes a document type list.
+   * Fetches the mandatory document checklist for a given agency sub-type via the
+   * same `getFormDetails` Apex call used by {@link getFormDetails}, just with
+   * metadataType `Broker Document Config` instead of `Broker Field Config` - so
+   * the client never hardcodes a document type list and there's no separate
+   * required-documents Apex integration to maintain.
    *
    * @param dto - The agency sub-type to fetch required documents for.
    * @returns The mandatory document list wrapped in a `{ message, data }` envelope.
@@ -86,13 +91,17 @@ export class CreateNewAccountService {
   async getRequiredDocuments(
     dto: GetRequiredDocumentsDto,
   ): Promise<ResultWithMessage<RequiredDocumentRecord[]>> {
-    const response = await this.createNewAccountRepository.getRequiredDocuments(
-      { subType: dto.subType },
+    const sections = await this.createNewAccountRepository.getRequiredDocuments(
+      {
+        mode: FORM_DETAILS_MODE,
+        metadataType: REQUIRED_DOCUMENTS_METADATA_TYPE,
+        subType: dto.subType,
+      },
     );
 
     return {
-      message: response.message,
-      data: response.data,
+      message: 'Required documents fetched successfully',
+      data: Object.values(sections).flat(),
     };
   }
 
