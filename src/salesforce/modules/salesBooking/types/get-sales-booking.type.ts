@@ -51,6 +51,15 @@ export interface SalesBookingInventoryData {
   buildingId: string | null;
 }
 
+export interface SalesBookingCommission {
+  name: string;
+  invoiceStatus: string | null;
+  commissionStatus: string | null;
+  commissionPercent: number | null;
+  commissionDate: string | null;
+  commissionAmount: number | null;
+}
+
 export interface SalesBookingRecord {
   tokenAmount: number | null;
   SignedRAformUploaded: boolean | null;
@@ -73,7 +82,7 @@ export interface SalesBookingRecord {
   dealType: string | null;
   dealStatus: string | null;
   createdDate: string;
-  comissions: unknown;
+  comissions: SalesBookingCommission[] | null;
   bookingDate: string | null;
 }
 

@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { CommissionModule as SalesforceCommissionModule } from '../salesforce/modules/commission/commission.module';
+import { SalesforceModule } from '../salesforce/salesforce.module';
 import { CommissionController } from './controller/commission.controller';
 import { CommissionService } from './service/commission.service';
 import { CommissionRepository } from './repository/commission.repository';
 
 @Module({
-  imports: [SalesforceCommissionModule],
+  imports: [SalesforceCommissionModule, SalesforceModule],
   controllers: [CommissionController],
   providers: [CommissionService, CommissionRepository],
   exports: [CommissionService],
