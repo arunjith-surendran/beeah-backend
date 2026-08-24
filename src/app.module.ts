@@ -21,6 +21,8 @@ import { DocumentModule } from './document/document.module';
 import { HealthModule } from './health/health.module';
 import { EoiPaymentModule } from './eoiPayment/eoi-payment.module';
 import { SalesBookingPaymentModule } from './salesBookingPayment/sales-booking-payment.module';
+import { CountryModule } from './country/country.module';
+import { NationalityModule } from './nationality/nationality.module';
 
 @Module({
   imports: [
@@ -48,6 +50,8 @@ import { SalesBookingPaymentModule } from './salesBookingPayment/sales-booking-p
     HealthModule,
     EoiPaymentModule,
     SalesBookingPaymentModule,
+    CountryModule,
+    NationalityModule,
   ],
   controllers: [AppController],
   providers: [
