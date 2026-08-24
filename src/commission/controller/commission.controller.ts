@@ -1,10 +1,15 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { CommissionService } from '../service/commission.service';
 import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-result-with-message.interface';
+import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { CommissionDto } from '../dto/get-commissions.dto';
+import {
+  UploadCommissionInvoiceDto,
+  UploadCommissionInvoiceResultDto,
+} from '../dto/upload-commission-invoice.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('commissions')
@@ -47,5 +52,22 @@ export class CommissionController {
         dateSelected,
       },
     );
+  }
+
+  /**
+   * Uploads a base64-encoded invoice against a commission record. Calls Salesforce's
+   * shared `uploadDocument` Apex REST endpoint independently (not the generic
+   * `/documents/upload` route), matching this module's self-contained design.
+   *
+   * @param user - Authenticated user attached by `JwtAuthGuard`.
+   * @param dto - File name, base64 content, and the commission record id to attach it to.
+   * @returns The created document id and Azure URL wrapped in a `{ message, data }` envelope.
+   */
+  @Post('upload-invoice')
+  uploadInvoice(
+    @CurrentUser() user: User,
+    @Body() dto: UploadCommissionInvoiceDto,
+  ): Promise<ResultWithMessage<UploadCommissionInvoiceResultDto>> {
+    return this.commissionService.uploadInvoice(user, dto);
   }
 }

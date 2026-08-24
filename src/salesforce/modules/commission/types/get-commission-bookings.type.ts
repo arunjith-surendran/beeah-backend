@@ -15,6 +15,7 @@ export interface CommissionBookingInventoryData {
 }
 
 export interface CommissionRecord {
+  recordId: string;
   name: string;
   invoiceStatus: string | null;
   commissionStatus: string | null;

@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { SalesforceClient } from '../../network/salesforce.client';
 import { ALL_SALES_BOOKING_APEX_REST_PATH } from '../../network/paths/sales-booking.paths';
+import { UPLOAD_DOCUMENT_APEX_REST_PATH } from '../../network/paths/document.paths';
 import {
   GetAllCommissionBookingsApexPayload,
   GetAllCommissionBookingsApexResponse,
 } from './types/get-commission-bookings.type';
+import {
+  UploadInvoiceApexPayload,
+  UploadInvoiceApexResponse,
+} from './types/upload-invoice.type';
 
 @Injectable()
 export class CommissionService {
@@ -26,6 +31,26 @@ export class CommissionService {
     const response =
       await this.salesforceClient.http.post<GetAllCommissionBookingsApexResponse>(
         ALL_SALES_BOOKING_APEX_REST_PATH,
+        payload,
+      );
+    return response.data;
+  }
+
+  /**
+   * Calls the shared Salesforce `uploadDocument` Apex REST endpoint (POST) to attach a
+   * base64-encoded invoice to a commission record. Called independently rather than
+   * depending on the generic document module, matching the rest of this module's
+   * self-contained design.
+   *
+   * @param payload - Invoice file fields in the exact shape expected by the Apex REST endpoint.
+   * @returns The raw Apex REST response containing the created document id and Azure URL.
+   */
+  async uploadInvoice(
+    payload: UploadInvoiceApexPayload,
+  ): Promise<UploadInvoiceApexResponse> {
+    const response =
+      await this.salesforceClient.http.post<UploadInvoiceApexResponse>(
+        UPLOAD_DOCUMENT_APEX_REST_PATH,
         payload,
       );
     return response.data;

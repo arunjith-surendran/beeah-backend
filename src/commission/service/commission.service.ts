@@ -1,20 +1,34 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, Injectable } from '@nestjs/common';
 import type { User } from '@prisma/client';
 import { CommissionRepository } from '../repository/commission.repository';
 import {
   CommissionBookingRecord,
   CommissionRecord,
 } from '../../salesforce/modules/commission/types/get-commission-bookings.type';
+import { UploadInvoiceApexResponse } from '../../salesforce/modules/commission/types/upload-invoice.type';
 import {
   CommissionDto,
   CommissionStatusVariant,
 } from '../dto/get-commissions.dto';
+import {
+  UploadCommissionInvoiceDto,
+  UploadCommissionInvoiceResultDto,
+} from '../dto/upload-commission-invoice.dto';
 import { PaginatedResultWithMessage } from '../../common/interfaces/paginated-result-with-message.interface';
+import { ResultWithMessage } from '../../common/interfaces/result-with-message.interface';
 import { paginate } from '../../common/utils/paginate.util';
-import { unauthorizedException } from '../../common/utils/validators.util';
+import {
+  required,
+  unauthorizedException,
+} from '../../common/utils/validators.util';
+import {
+  BadRequestException,
+  BadGatewayException,
+} from '../../common/utils/http-errors.util';
 import { SalesforceClient } from '../../salesforce/network/salesforce.client';
 
 const NOT_AVAILABLE = '-';
+const INVOICE_DOCUMENT_TYPE = 'Broker Invoice';
 
 export interface CommissionFilters {
   search?: string;
@@ -84,6 +98,65 @@ export class CommissionService {
         hasPrevious: paged.hasPrevious,
       },
       data: paged.items,
+    };
+  }
+
+  /**
+   * Uploads a base64-encoded invoice against a commission record via the shared
+   * `uploadDocument` Apex REST endpoint. `documentType` is fixed to `'Broker Invoice'`
+   * server-side, so callers only need to send the file and the record id.
+   *
+   * @param user - Authenticated user.
+   * @param dto - File name, base64 content, and the commission record id to attach it to.
+   * @returns The created document id and Azure URL wrapped in a `{ message, data }` envelope.
+   */
+  async uploadInvoice(
+    user: User,
+    dto: UploadCommissionInvoiceDto,
+  ): Promise<ResultWithMessage<UploadCommissionInvoiceResultDto>> {
+    unauthorizedException(!!user, 'Unauthorized');
+    required(dto.recordId, 'Commission id');
+
+    let response: UploadInvoiceApexResponse;
+    try {
+      response = await this.commissionRepository.uploadInvoice({
+        fileName: dto.fileName,
+        base64: dto.base64,
+        recordId: dto.recordId,
+        documentType: INVOICE_DOCUMENT_TYPE,
+      });
+    } catch (error) {
+      // `SalesforceClient` already converts Salesforce's own HTTP error response into a
+      // typed HttpException carrying its real message - rethrow that as-is. Anything
+      // else (network failure, etc.) still gets a real message instead of falling
+      // through to the global filter's generic "Internal server error".
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new BadGatewayException(
+        error instanceof Error
+          ? error.message
+          : 'Failed to upload invoice to Salesforce',
+      );
+    }
+
+    if (!response.result) {
+      throw new BadGatewayException(
+        `Unexpected uploadDocument response shape: ${JSON.stringify(response)}`,
+      );
+    }
+    if (!response.result.success) {
+      throw new BadRequestException(
+        response.result.errorMessage ?? response.message,
+      );
+    }
+
+    return {
+      message: response.message,
+      data: {
+        documentId: response.result.documentId,
+        azureUrl: response.result.azureUrl,
+      },
     };
   }
 
@@ -187,7 +260,7 @@ export class CommissionService {
     const isPaid = status === 'Payment Completed';
 
     return {
-      id: commission.name,
+      id: commission.recordId,
       unitName: booking.inventoryData?.unitName ?? NOT_AVAILABLE,
       dateOfBooking: this.formatDate(booking.bookingDate),
       project: booking.inventoryData?.projectName ?? NOT_AVAILABLE,
