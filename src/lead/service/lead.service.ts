@@ -173,6 +173,10 @@ export class LeadService {
       createdDate: lead.CreatedDate,
       lastModifiedDate: lead.LastModifiedDate,
       assignedDate: lead.Assigned_Date__c,
+      company: lead.Company,
+      interestedPropertyType: lead.Interested_Property_Type__c,
+      buyerType: lead.Buyer_Type__c,
+      recordTypeId: lead.RecordTypeId,
     };
   }
 }

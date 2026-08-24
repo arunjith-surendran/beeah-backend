@@ -19,4 +19,8 @@ export class LeadDetailDto {
   createdDate: string;
   lastModifiedDate: string;
   assignedDate: string | null;
+  company: string | null;
+  interestedPropertyType: string | null;
+  buyerType: string | null;
+  recordTypeId: string | null;
 }

@@ -19,6 +19,10 @@ export interface LeadRecord {
   CreatedDate: string;
   LastModifiedDate: string;
   Assigned_Date__c: string | null;
+  Company: string | null;
+  Interested_Property_Type__c: string | null;
+  Buyer_Type__c: string | null;
+  RecordTypeId: string | null;
   [key: string]: unknown;
 }
 

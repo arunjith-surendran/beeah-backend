@@ -148,7 +148,7 @@ export class SalesforceClient {
 
     if (stored && Date.now() < stored.expiresAt.getTime()) {
       this.session = stored;
-      return this.session;
+      return stored;
     }
 
     return this.login();
